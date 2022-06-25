@@ -1,0 +1,8 @@
+# put your bot token here
+token: ''
+
+# set log level
+log_level: INFO
+
+# set LittlePaimon data path
+data_path: 'data'
