@@ -1,0 +1,9 @@
+httpx>=0.23.0
+tqdm>=4.64.0
+aiohttp>=3.8.1
+Pillow>=9.1.1
+yarl>=1.7.2
+bs4>=0.0.1
+beautifulsoup4>=4.11.1
+numpy>=1.23.1
+uuid>=1.30
