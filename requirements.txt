@@ -7,3 +7,5 @@ bs4>=0.0.1
 beautifulsoup4>=4.11.1
 numpy>=1.23.1
 uuid>=1.30
+khl.py>=0.2.16
+KaiheilaCardBuilder>=1.2.1
