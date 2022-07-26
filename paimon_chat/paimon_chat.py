@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 def create_matcher(bot: 'LittlePaimonBot', chat_word: str, pattern: str, cooldown: int, pro: float,
                    responses: List[str]):
     @bot.command(name=chat_word, regex=pattern, prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
-    async def handler(msg: Message, *args):
+    async def handler(msg: Message, *_):
         response = random.choice(responses)
         if response.endswith('.mp3'):
             url = await MessageBuilder.static_record(bot, f'LittlePaimon/voice/{response}')
@@ -42,8 +42,10 @@ def create_matcher(bot: 'LittlePaimonBot', chat_word: str, pattern: str, cooldow
 async def on_startup(bot: 'LittlePaimonBot'):
     global voice_list
     data = await requests.get('https://static.cherishmoon.fun/LittlePaimon/voice/voice_list.json')
-    if not isinstance(data, dict):
-        raise Exception('派蒙语音更新失败')
+    try:
+        data = json.loads(data)
+    except Exception as e:
+        raise e
     with open(bot.config.data_path + '/voice_list.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
     voice_list = data
