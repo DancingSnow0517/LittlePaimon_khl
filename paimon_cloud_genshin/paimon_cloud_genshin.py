@@ -25,6 +25,7 @@ wait_to_rm: Dict[str, bool] = {}
 
 
 async def on_startup(bot: 'LittlePaimonBot'):
+    @bot.task.add_cron(hour=6, timezone='Asia/Shanghai')
     async def auto_sign_cgn():
         data = load_json(Path() / 'data' / 'LittlePaimon' / 'CloudGenshin.json')
 
@@ -51,8 +52,6 @@ async def on_startup(bot: 'LittlePaimonBot'):
                             return
             else:
                 await (await bot.fetch_user(user)).send('token已过期,请重新自行抓包并重新绑定')
-
-    bot.task.add_cron(hour=6, timezone='Asia/Shanghai')(auto_sign_cgn)
 
     @bot.command(name='cloud_ys', aliases=['云原神', 'yys'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
     async def cloud_ys(msg: Message, *args):
