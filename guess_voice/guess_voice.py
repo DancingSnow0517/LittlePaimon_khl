@@ -46,9 +46,23 @@ async def on_startup(bot: 'LittlePaimonBot'):
     async def update_voice(_: Message):
         await update(bot.config.data_path)
 
-    @bot.command(name='guess_game', aliases=['原神猜语音'], prefixes=['!', '！'])
-    async def guess_game(msg: Message):
-        await guess_main.start(msg, 120)
+    @bot.command(name='guess_game', aliases=['原神猜语音'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    async def guess_game(msg: Message, *args: str):
+        if len(args) == 1:
+            game_time = 120
+            lang = '中'
+        else:
+            if args[0].isdigit():
+                game_time = int(args[0])
+            else:
+                game_time = 120
+            if len(args) == 2:
+                lang = '中'
+            elif args[1] in ['中', '日', '英', '韩']:
+                lang = args[1]
+            else:
+                lang = '中'
+        await guess_main.start(msg, game_time, lang)
 
     @bot.command(name='guess', prefixes=[''], aliases=[i for i in voice_data])
     async def guess(msg: Message):
@@ -92,20 +106,20 @@ class GuessVoice:
     score: Dict[str, int] = {}
     channel: Channel
 
-    def __init__(self, bot: 'LittlePaimonBot', language: Literal['中', '日', '英', '韩'] = '中') -> None:
+    def __init__(self, bot: 'LittlePaimonBot') -> None:
         self.bot = bot
-        self.language = language
 
-    async def start(self, msg: Message, time: int = 30) -> None:
+    async def start(self, msg: Message, time: int = 30, language: Literal['中', '日', '英', '韩'] = '中') -> None:
         if self.statu:
             await msg.reply('原神猜语音游戏已经开始了')
         else:
-            await msg.reply('正在开始原神猜语音游戏')
+            await msg.reply(f'正在开始原神猜语音游戏\n时间: {time} s 语言: {language}')
             self.channel = msg.ctx.channel
             self.statu = True
             self.time = time
+            self.language = language
             self.score = {}
-            self.count = 1
+            self.count = 0
             self.info = await self.get_random_voice()
             await self.info.send(self.channel, self)
 
