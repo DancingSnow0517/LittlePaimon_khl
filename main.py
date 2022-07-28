@@ -11,6 +11,7 @@ from khl.command import Rule
 from khl_card import Card
 from khl_card.accessory import Kmarkdown
 from khl_card.modules import Section, Context
+from littlepaimon_utils.files import load_json, download
 
 from guess_voice import guess_voice
 from paimon_chat import paimon_chat
@@ -19,7 +20,6 @@ from paimon_gacha import paimon_gacha
 from paimon_info import paimon_info
 from utils.api import CommandInfo
 from utils.config import Config
-from utils.files import load_json, download
 
 resource_list = load_json(path=Path(__file__).parent / 'resources' / 'resource_list.json')
 resource_path = Path().cwd() / 'resources' / 'LittlePaimon'

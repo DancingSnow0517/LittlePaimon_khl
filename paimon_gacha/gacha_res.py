@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy
 from PIL import ImageFont, Image, ImageDraw
 from khl import User
+from littlepaimon_utils.files import load_json
 
-from utils.files import load_json
 from .gacha_info import user_info, init_user_info, save_user_info
 
 RES_PATH = Path() / 'resources' / 'LittlePaimon' / 'gacha_res'

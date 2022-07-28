@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from khl import Message
-from khl.command import Rule
-from khl_card.accessory import Image
+from khl_card import NamedColor
+from khl_card.accessory import Image, Kmarkdown
 from khl_card.card import Card
-from khl_card.modules import Container
+from khl_card.modules import Container, Header, Section, Divider
 
 from paimon_gacha.gacha_info import save_user_info, init_user_info, user_info
 from paimon_gacha.gacha_res import more_ten
@@ -36,8 +36,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
         if num_str.isdigit():
             num = int(num_str)
-            if num > 5:
-                await msg.reply('最多只能同时 5 十连哦')
+            if num > 9:
+                await msg.reply('最多只能同时 9 十连哦')
             elif num <= 0:
                 await msg.reply('次数至少为 1 哦')
         else:
@@ -61,19 +61,24 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.my_command(name='show_log', aliases=['模拟抽卡记录', '查看模拟抽卡记录'], introduce='查看在小派蒙这边的模拟抽卡记录', usage='直接使用即可')
     async def show_log(msg: Message, show_type: str = None, _: str = None):
+        res_card = Card(color=NamedColor.AQUA)
         uid = msg.author.id
         init_user_info(uid)
         if user_info[uid]['gacha_list']['wish_total'] == 0:
             await msg.reply('你此前并没有抽过卡哦')
             return
         if show_type == '角色' or show_type == '武器':
-            res = get_rw_record(show_type, uid)
+            res_card = get_rw_record(show_type, uid)
         else:
             data = user_info[uid]['gacha_list']
             res = '你的模拟抽卡记录如下:\n'
+            res_card.append(Header('你的模拟抽卡记录如下:'))
             res += '你在本频道总共抽卡 %s 次\n其中五星共 %s 个,四星共 %s 个\n' % (
                 user_info[uid]['gacha_list']['wish_total'], user_info[uid]['gacha_list']['wish_5'],
                 user_info[uid]['gacha_list']['wish_4'])
+            res_card.append(Section(Kmarkdown(f'你在本频道总共抽卡 **{user_info[uid]["gacha_list"]["wish_total"]}** 次')))
+            res_card.append(Section(Kmarkdown(f'其中五星共 **{user_info[uid]["gacha_list"]["wish_5"]}** 个,四星共 **{user_info[uid]["gacha_list"]["wish_4"]}** 个')))
+            res_card.append(Divider())
             try:
                 t5 = '{:.2f}%'.format(data['wish_5'] / (
                         data['wish_total'] - data['gacha_5_role'] - data['gacha_5_weapon'] - data['gacha_5_permanent']) * 100)
@@ -94,14 +99,24 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 u4 = '0.00%'
             dg_name = data['dg_name'] if data['dg_name'] != '' else '未定轨'
             res += '五星出货率为 %s  up率为 %s \n四星出货率为 %s  up率为 %s \n' % (t5, u5, t4, u4)
+            res_card.append(Section(Kmarkdown(f'五星出货率为 **{t5}**, up率为 **{u5}** \n四星出货率为 **{t4}**, up率为 **{u4}**\n---')))
             res += '·|角色池|·\n目前 %s 抽未出五星  %s 抽未出四星\n下次五星是否up: %s \n' % (
                 data['gacha_5_role'], data['gacha_4_role'], data['is_up_5_role'])
+            res_card.append(Header('角色池'))
+            res_card.append(Section(Kmarkdown(f'目前 **{data["gacha_5_role"]}** 抽未出五星, **{data["gacha_4_role"]}** 抽未出四星\n下次五星是否up: **{"是" if data["is_up_5_role"] else "否"}**')))
+            res_card.append(Divider())
             res += '·|武器池|·\n目前 %s 抽未出五星  %s 抽未出四星\n下次五星是否up: %s \n' % (
                 data['gacha_5_weapon'], data['gacha_4_weapon'], data['is_up_5_weapon'])
+            res_card.append(Header('武器池'))
+            res_card.append(Section(Kmarkdown(f'目前 **{data["gacha_5_weapon"]}** 抽未出五星, **{data["gacha_4_weapon"]}** 抽未出四星\n下次五星是否up: **{"是" if data["is_up_5_weapon"] else "否"}**')))
             res += '定轨武器为 %s ,能量值为 %s \n' % (dg_name, data['dg_time'])
+            res_card.append(Section(Kmarkdown(f'定轨武器为 **{dg_name}** ,能量值为 **{data["dg_time"]}**')))
+            res_card.append(Divider())
             res += '·|常驻池|·\n目前 %s 抽未出五星  %s 抽未出四星\n' % (data['gacha_5_permanent'], data['gacha_4_permanent'])
+            res_card.append(Header('常驻池'))
+            res_card.append(Section(Kmarkdown(f'目前 **{data["gacha_5_permanent"]}** 抽未出五星, **{data["gacha_4_permanent"]}** 抽未出四星')))
 
-        await msg.reply(res)
+        await msg.reply([res_card.build()])
 
     @bot.my_command(name='delete_log', aliases=['删除模拟抽卡记录'], usage='直接使用即可', introduce='删除你在小派蒙这里模拟抽卡的记录')
     async def delete_log(msg: Message, _):
@@ -182,27 +197,36 @@ def gacha_type_by_name(gacha_type):
 
 
 def get_rw_record(msg, uid):
+    card = Card(color=NamedColor.AQUA)
     if msg == '角色':
         if not len(user_info[uid]['role_list']):
             res = '你还没有角色'
+            card.append(Section(Kmarkdown('你还没有角色')))
         else:
             res = '你所拥有的角色如下:\n'
+            card.append(Header('你所拥有的角色如下:'))
             for role in user_info[uid]['role_list'].items():
                 if len(role[1]['星级']) == 5:
                     res += '%s%s 数量: %s 出货: %s\n' % (role[1]['星级'], role[0], role[1]['数量'], role[1]['出货'])
+                    card.append(Section(Kmarkdown(f'{role[1]["星级"]}{role[0]} 数量: **{role[1]["数量"]}** 出货: **{role[1]["出货"]}**')))
                 else:
                     res += '%s%s 数量: %s\n' % (role[1]['星级'], role[0], role[1]['数量'])
+                    card.append(Section(Kmarkdown(f'{role[1]["星级"]}{role[0]} 数量: **{role[1]["数量"]}**')))
     else:
         if not len(user_info[uid]['weapon_list']):
             res = '你还没有武器'
+            card.append(Section(Kmarkdown('你还没有武器')))
         else:
             res = '你所拥有的武器如下:\n'
+            card.append(Header('你所拥有的武器如下:'))
             for wp in user_info[uid]['weapon_list'].items():
                 if len(wp[1]['星级']) == 5:
                     res += '%s%s 数量: %s 出货: %s\n' % (wp[1]['星级'], wp[0], wp[1]['数量'], wp[1]['出货'])
+                    card.append(Section(Kmarkdown(f'{wp[1]["星级"]}{wp[0]} 数量: {wp[1]["数量"]} 出货: {wp[1]["出货"]}')))
                 else:
                     res += '%s%s 数量: %s\n' % (wp[1]['星级'], wp[0], wp[1]['数量'])
-    return res.replace('[', '').replace(']', '').replace(',', ' ')
+                    card.append(Section(Kmarkdown(f'{wp[1]["星级"]}{wp[0]} 数量: {wp[1]["数量"]}')))
+    return card
 
 
 async def get_dg_weapon():

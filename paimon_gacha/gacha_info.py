@@ -1,5 +1,6 @@
 from pathlib import Path
-from utils.files import load_json, save_json
+
+from littlepaimon_utils.files import load_json, save_json
 
 RES_PATH = Path() / 'resources' / 'LittlePaimon' / 'gacha_res'
 USER_INFO_PATH = Path() / 'data' / 'LittlePaimon' / 'user_data' / 'user_gacha_info.json'

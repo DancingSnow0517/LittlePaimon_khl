@@ -9,9 +9,9 @@ from khl_card.accessory import Button, PlainText, Kmarkdown
 from khl_card.card import Card
 from khl_card.modules import ActionGroup, Header, Section
 from khl_card.types import ThemeTypes
+from littlepaimon_utils.files import load_json, save_json
 
 from paimon_cloud_genshin.data_source import get_Info, check_token, get_Notification
-from utils.files import load_json, save_json
 
 if TYPE_CHECKING:
     from main import LittlePaimonBot
