@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from khl import Message
-from khl.command import Rule
 
 if TYPE_CHECKING:
     from main import LittlePaimonBot
@@ -13,31 +12,31 @@ async def on_startup(bot: 'LittlePaimonBot'):
     async def sy(msg: Message):
         ...
 
-    @bot.command(name='ssbq', aliases=['实时便笺', '实时便签', '当前树脂'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='ssbq', aliases=['实时便笺', '实时便签', '当前树脂'])
     async def ssbq(msg: Message):
         ...
 
-    @bot.command(name='myzj', aliases=['札记信息', '每月札记'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='myzj', aliases=['札记信息', '每月札记'])
     async def myzj(msg: Message):
         ...
 
-    @bot.command(name='ys', aliases=['原神卡片', '个人卡片'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='ys', aliases=['原神卡片', '个人卡片'])
     async def ys(msg: Message):
         ...
 
-    @bot.command(name='ysa', aliases=['角色背包'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='ysa', aliases=['角色背包'])
     async def ysa(msg: Message):
         ...
 
-    @bot.command(name='ysc', aliases=['角色卡片'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='ysc', aliases=['角色卡片'])
     async def ysc(msg: Message):
         ...
 
-    @bot.command(name='ysb', aliases=['原神绑定', '绑定cookie'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='ysb', aliases=['原神绑定', '绑定cookie'])
     async def ysb(msg: Message):
         ...
 
-    @bot.command(name='mys_sign', aliases=['mys签到', '米游社签到'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='mys_sign', aliases=['mys签到', '米游社签到'])
     async def mys_sign(msg: Message):
         ...
     ...

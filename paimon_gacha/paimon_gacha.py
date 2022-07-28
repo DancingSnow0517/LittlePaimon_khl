@@ -24,8 +24,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
     # 检查数据文件夹是否存在
     TEMP_PATH.mkdir(parents=True, exist_ok=True)
 
-    @bot.command(name='gacha', regex=r'^抽(?P<num>\d*)十连(?P<pool>\S*) \(met\)(?P<uid>\d+)\(met\)\s$',
-                 rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_regex(name='gacha', regex=r'^抽(?P<num>\d*)十连(?P<pool>\S*) \(met\)(?P<uid>\d+)\(met\)\s$', usage='抽[]十连[池子] e.抽5十连武器', introduce='小派蒙的模拟抽卡')
     async def gacha(msg: Message, *args):
         print(args)
         user = msg.author
@@ -60,7 +59,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         save_user_info()
         await msg.reply([(await build_gacha_card(img_list, bot)).build()])
 
-    @bot.command(name='show_log', aliases=['模拟抽卡记录', '查看模拟抽卡记录'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='show_log', aliases=['模拟抽卡记录', '查看模拟抽卡记录'], introduce='查看在小派蒙这边的模拟抽卡记录', usage='直接使用即可')
     async def show_log(msg: Message, show_type: str = None, _: str = None):
         uid = msg.author.id
         init_user_info(uid)
@@ -104,7 +103,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
         await msg.reply(res)
 
-    @bot.command(name='delete_log', aliases=['删除模拟抽卡记录'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='delete_log', aliases=['删除模拟抽卡记录'], usage='直接使用即可', introduce='删除你在小派蒙这里模拟抽卡的记录')
     async def delete_log(msg: Message, _):
         uid = msg.author.id
         init_user_info(uid)
@@ -115,7 +114,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         except:
             await msg.reply('你的抽卡记录删除失败')
 
-    @bot.command(name='choose_dg', aliases=['选择定轨'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='choose_dg', aliases=['选择定轨'], usage='选择定轨 [武器]', introduce='选择模拟抽卡的定轨')
     async def choose_dg(msg: Message, *args):
         print(args)
         uid = msg.author.id
@@ -133,7 +132,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
                     save_user_info()
                     await msg.reply(f'定轨成功，定轨能量值已重置，当前定轨武器为：{dg_weapon}')
 
-    @bot.command(name='delete_dg', aliases=['删除定轨'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='delete_dg', aliases=['删除定轨'], usage='直接使用即可', introduce='删除你在小派蒙这里模拟抽卡的定轨')
     async def delete_dg(msg: Message, _):
         uid = msg.author.id
         init_user_info(uid)
@@ -145,7 +144,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
             save_user_info()
             await msg.reply('你的定轨记录删除成功')
 
-    @bot.command(name='show_dg', aliases=['显示定轨'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='show_dg', aliases=['显示定轨'], usage='直接使用即可', introduce='查看你在小派蒙这里模拟抽卡的定轨')
     async def show_dg(msg: Message, _):
         uid = msg.author.id
         init_user_info(uid)
