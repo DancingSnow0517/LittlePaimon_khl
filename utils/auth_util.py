@@ -68,11 +68,19 @@ def get_use_cookie(user_id, uid='', mys_id='', action='') -> Optional[str]:
             return cookie
 
     for cookie in cookies:
-        if cookie_data.is_cookie_can_use(cookie):
+        if cookie_data.is_cookie_can_use(cookie.cookie):
             log.info(f'使用用户 {user_id} 的 cookie 来执行 {action} 操作')
-            return cookie
+            return cookie.cookie
 
     return None
+
+
+def get_own_cookie(user_id, uid, action=''):
+    info = cookie_data.get_cookie_by_uid(uid)
+    if info.owner != user_id:
+        return None
+    log.info(f'使用用户 {user_id} 的 cookie 来执行 {action} 操作')
+    return info.cookie
 
 
 # 检查cookie是否有效，通过查看个人主页来判断

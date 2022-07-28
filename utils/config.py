@@ -25,20 +25,42 @@ class Config:
         return cls(**data)
 
 
+class CookieInfo:
+
+    owner: str = ''
+    cookie: str = ''
+
+    def __init__(self, owner: str, cookie: str) -> None:
+        self.owner = owner
+        self.cookie = cookie
+
+    def to_data(self):
+        return {
+            'owner': self.owner,
+            'cookie': self.cookie
+        }
+
+
 class CookieData:
     public_cookies: List[str] = []
-    cookies: Dict[str, List[str]] = {}
+    cookies: Dict[str, CookieInfo] = {}
     cookies_statu: Dict[str, bool] = {}
 
     def __init__(self, **data) -> None:
         self.public_cookies = data.get('public_cookies', [])
-        self.cookies = data.get('cookies', {})
         self.cookies_statu = data.get('cookies_statu', {})
+        self.cookies = {}
+        data = data.get('cookies', {})
+        for uid in data:
+            self.cookies[uid] = CookieInfo(owner=data[uid]['owner'], cookie=data[uid]['cookie'])
 
     def save(self):
+        cookie_info = {}
+        for uid in self.cookies:
+            cookie_info[uid] = {'owner': self.cookies[uid].owner, 'cookie': self.cookies[uid].cookie}
         data = {
             'public_cookies': self.public_cookies,
-            'cookies': self.cookies,
+            'cookies': cookie_info,
             'cookies_statu': self.cookies_statu
         }
         with open('cookies.yml', 'w', encoding='utf-8') as f:
@@ -48,8 +70,8 @@ class CookieData:
     def load(cls) -> 'CookieData':
         if not os.path.exists('cookies.yml'):
             data = {
-                'public_cookies': {},
-                'cookies': [],
+                'public_cookies': [],
+                'cookies': {},
                 'cookies_statu': {}
             }
             with open('cookies.yml', 'w', encoding='utf-8') as f:
@@ -63,8 +85,11 @@ class CookieData:
     def get_public_cookies(self):
         return self.public_cookies
 
-    def get_user_cookies(self, user_id: str):
-        return self.cookies.get(user_id)
+    def get_user_cookies(self, user_id: str) -> List[CookieInfo]:
+        return [self.cookies[i] for i in self.cookies if self.cookies[i].owner == user_id]
+
+    def get_cookie_by_uid(self, uid: str) -> CookieInfo:
+        return self.cookies[uid]
 
     def is_cookie_can_use(self, cookie: str) -> bool:
         return self.cookies_statu[cookie]
@@ -78,10 +103,8 @@ class CookieData:
         self.cookies_statu[cookie] = True
         self.save()
 
-    def add_private_cookie(self, user_id: str, cookie: str):
-        if user_id not in self.cookies:
-            self.cookies[user_id] = []
-        self.cookies[user_id].append(cookie)
+    def add_private_cookie(self, uid, user_id: str, cookie: str):
+        self.cookies[uid] = CookieInfo(owner=user_id, cookie=cookie)
         self.cookies_statu[cookie] = True
         self.save()
 

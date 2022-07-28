@@ -10,3 +10,4 @@ uuid>=1.30
 khl.py>=0.2.16
 KaiheilaCardBuilder>=1.2.3
 littlepaimon_utils>=1.0.2
+matplotlib
