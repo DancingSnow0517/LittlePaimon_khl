@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, List, Dict, Tuple
 
 from khl import Message, Channel, User
-from khl.command import Rule
 from khl_card.accessory import *
 from khl_card.card import Card
 from khl_card.modules import *
@@ -16,8 +15,10 @@ from . import download_data
 if TYPE_CHECKING:
     from main import LittlePaimonBot
 
-guess_main: 'GuessVoice'
+guess_games: Dict[str, 'GuessVoice']
 voice_data: dict
+
+languages = Literal['中', '日', '英', '韩']
 
 
 # 获取原神语音
@@ -36,18 +37,25 @@ async def update(data_path) -> dict:
 
 # 当 bot 启动后
 async def on_startup(bot: 'LittlePaimonBot'):
-    global guess_main
+    global guess_games
     await update(bot.config.data_path)
 
-    # 初始化游戏
-    guess_main = GuessVoice(bot)
+    guess_games = {}
 
-    @bot.command(name='update_voice', aliases=['更新原神语音资源'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='update_voice', aliases=['更新原神语音资源'], usage='更新原神语音资源',
+                    introduce='更新原神猜语言游戏的语音资源')
     async def update_voice(_: Message):
         await update(bot.config.data_path)
 
-    @bot.command(name='guess_game', aliases=['原神猜语音'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    @bot.my_command(name='guess_game', aliases=['原神猜语音'], usage='原神猜语音 [游戏时间] [语言]', introduce='开始原神猜语音游戏')
     async def guess_game(msg: Message, *args: str):
+        global guess_games
+        if msg.ctx.channel.id in guess_games:
+            game = guess_games.get(msg.ctx.channel.id)
+        else:
+            game = GuessVoice(bot, msg)
+            guess_games[msg.ctx.channel.id] = game
+        lang: languages
         if len(args) == 1:
             game_time = 120
             lang = '中'
@@ -62,19 +70,23 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 lang = args[1]
             else:
                 lang = '中'
-        await guess_main.start(msg, game_time, lang)
+        await game.start(game_time, lang)
 
     @bot.command(name='guess', prefixes=[''], aliases=[i for i in voice_data])
     async def guess(msg: Message):
-        print(guess_main.statu)
+        game = guess_games.get(msg.ctx.channel.id, None)
+        if game is None:
+            return
+
+        print(game.statu)
         print(msg.content)
-        print(guess_main.info.char)
-        if guess_main.statu:
+        print(game.info.char)
+        if game.statu:
             char = msg.content
-            if char == guess_main.info.char:
+            if char == game.info.char:
                 await msg.reply('恭喜你，答对了')
-                await guess_main.add_score(msg.author)
-                await guess_main.next()
+                await game.add_score(msg.author)
+                await game.next()
 
 
 class GuessInfo:
@@ -106,15 +118,15 @@ class GuessVoice:
     score: Dict[str, int] = {}
     channel: Channel
 
-    def __init__(self, bot: 'LittlePaimonBot') -> None:
+    def __init__(self, bot: 'LittlePaimonBot', msg: Message) -> None:
         self.bot = bot
+        self.channel = msg.ctx.channel
 
-    async def start(self, msg: Message, time: int = 30, language: Literal['中', '日', '英', '韩'] = '中') -> None:
+    async def start(self, time: int = 30, language: languages = '中') -> None:
         if self.statu:
-            await msg.reply('原神猜语音游戏已经开始了')
+            await self.channel.send('原神猜语音游戏已经开始了')
         else:
-            await msg.reply(f'正在开始原神猜语音游戏\n时间: {time} s 语言: {language}')
-            self.channel = msg.ctx.channel
+            await self.channel.send(f'正在开始原神猜语音游戏\n时间: {time} s 语言: {language}')
             self.statu = True
             self.time = time
             self.language = language
@@ -175,5 +187,6 @@ class GuessVoice:
 
         return Card(
             Header('原神猜语音 排名：'),
-            Section(Paragraph(3, [Kmarkdown('\n'.join(ranks)), Kmarkdown('\n'.join(users)), Kmarkdown('\n'.join(scores))]))
+            Section(
+                Paragraph(3, [Kmarkdown('\n'.join(ranks)), Kmarkdown('\n'.join(users)), Kmarkdown('\n'.join(scores))]))
         )
