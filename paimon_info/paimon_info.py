@@ -70,6 +70,16 @@ async def on_startup(bot: 'LittlePaimonBot'):
                     await user.send(
                         f'=====小派蒙的自动签到=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
 
+    @bot.task.add_cron(hour=0, timezone='Asia/Shanghai')
+    async def auto_get_coin():
+        stokens = stoken_data.get_all_stoken()
+        for user_id in stokens:
+            user = await bot.fetch_user(user_id)
+            stoken = stokens[user_id].stoken
+            get_coin_task = MihoyoBBSCoin(stoken)
+            data = await get_coin_task.task_run()
+            await user.send("米游币获取完成\n" + data)
+
     @bot.my_command(name='sy', aliases=['深渊信息', '深境螺旋信息'], introduce='查看深渊战绩信息', usage='sy [uid] [层数]')
     async def sy(msg: Message, *args: str):
         images = []

@@ -187,6 +187,9 @@ class STokenData:
     def get_private_stoken(self, user_id):
         return self.stoken[user_id] if user_id in self.stoken else None
 
+    def get_all_stoken(self):
+        return self.stoken
+
 
 cookie_data = CookieData.load()
 stoken_data = STokenData.load()
