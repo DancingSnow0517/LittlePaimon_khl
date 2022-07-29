@@ -1,10 +1,12 @@
 import json
+import re
 from asyncio import sleep
 
 from littlepaimon_utils import aiorequests
 
 from utils import requests
 from utils.auth_util import get_headers, get_use_cookie, check_retcode, get_own_cookie, get_sign_headers
+from utils.config import cookie_data
 
 
 async def get_abyss_data(user_id: str, uid: str, schedule_type='1'):
@@ -187,3 +189,41 @@ async def get_enka_data(uid):
             return data
         except Exception:
             await sleep(1.5)
+
+
+def get_private_cookie(uid):
+    return cookie_data.get_cookie_by_uid(uid).cookie
+
+
+# 添加stoken
+async def addStoken(stoken, uid):
+    login_ticket = re.search(r'login_ticket=([0-9a-zA-Z]+)', stoken)
+    if login_ticket:
+        login_ticket = login_ticket.group(0).split('=')[1]
+    else:
+        return None, None, None, '你的cookie中没有login_ticket字段哦，请重新获取'
+    ck = get_private_cookie(uid)
+    if not ck:
+        return None, None, None, '你还没绑定私人cookie哦，请先用ysb绑定吧'
+    mys_id = re.search(r'account_id=(\d*)', ck)
+    if mys_id:
+        mys_id = mys_id.group(0).split('=')[1]
+    else:
+        return None, None, None, '你的cookie中没有account_id字段哦，请重新获取'
+    raw_data = await get_stoken_by_login_ticket(login_ticket, mys_id)
+    try:
+        stoken = raw_data['data']['list'][0]['token']
+    except TypeError:
+        return None, None, None, '该stoken无效获取过期了，请重新获取'
+    s_cookies = 'stuid={};stoken={}'.format(mys_id, stoken)
+    return s_cookies, mys_id, raw_data, 'OK'
+
+
+async def get_stoken_by_login_ticket(loginticket, mys_id):
+    req = await aiorequests.get(url='https://api-takumi.mihoyo.com/auth/api/getMultiTokenByLoginTicket',
+                                params={
+                                    'login_ticket': loginticket,
+                                    'token_types': '3',
+                                    'uid': mys_id
+                                })
+    return req.json()

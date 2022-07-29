@@ -14,10 +14,11 @@ from paimon_info.draw_daily_note import draw_daily_note_card
 from paimon_info.draw_month_info import draw_monthinfo_card
 from paimon_info.draw_player_card import draw_player_card, draw_all_chara_card
 from paimon_info.draw_role_card import draw_role_card
+from paimon_info.get_coin import MihoyoBBSCoin
 from paimon_info.get_data import get_abyss_data, get_daily_note_data, get_monthinfo_data, get_player_card_data, \
-    get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data
+    get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data, addStoken
 from utils.alias_handler import get_match_alias
-from utils.config import cookie_data
+from utils.config import cookie_data, stoken_data
 from utils.enka_util import PlayerInfo
 
 if TYPE_CHECKING:
@@ -26,6 +27,8 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 wait_to_rm: Dict[str, bool] = {}
+
+cookie_error_msg = '这个cookie无效哦，请旅行者确认是否正确\n1.ck要登录mys帐号后获取,且不能退出登录\n\n获取cookie的教程：\ndocs.qq.com/doc/DQ3JLWk1vQVllZ2Z1\n'
 
 
 async def on_startup(bot: 'LittlePaimonBot'):
@@ -242,7 +245,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
         res = await all_update()
         await msg.reply(res)
 
-    @bot.my_admin_command(name='add_public_ck', aliases=['添加公共cookie', '添加公共ck'], introduce='添加公共cookie', usage='add_public_ck [cookie]')
+    @bot.my_admin_command(name='add_public_ck', aliases=['添加公共cookie', '添加公共ck'], introduce='添加公共cookie',
+                          usage='add_public_ck [cookie]')
     async def add_public_ck(msg: Message, *args):
         if len(args) == 1:
             await msg.reply('小派蒙要你的 cookie 哦')
@@ -265,7 +269,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
         wait_to_rm[msg.author.id] = True
         await msg.reply([card.build()])
 
-    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'], introduce='更新角色信息', usage='update_info [UID]')
+    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'], introduce='更新角色信息',
+                    usage='update_info [UID]')
     async def update_info(msg: Message, *args):
         if len(args) == 1:
             await msg.reply('请给你的 UID 给小派蒙哦~')
@@ -292,7 +297,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
             role_list = list(player_info.get_update_roles_list().keys())
             await msg.reply(f'uid{uid}更新完成~本次更新的角色有：\n' + ' '.join(role_list))
 
-    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'], introduce='查看指定角色的详细面板信息', usage='role_info [UID] [角色]')
+    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'], introduce='查看指定角色的详细面板信息',
+                    usage='role_info [UID] [角色]')
     async def role_info(msg: Message, *args):
         if len(args) <= 2:
             await msg.reply('请给你的UID和要查看的角色给小派蒙哦~')
@@ -327,17 +333,47 @@ async def on_startup(bot: 'LittlePaimonBot'):
             img.save('Temp/role_card.png')
             await msg.reply(await bot.create_asset('Temp/role_card.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='get_mys_coin', aliases=['myb获取', '米游币获取', '获取米游币'])
-    async def get_mys_coin(msg: Message):
-        ...
-
-    @bot.my_command(name='get_mys_coin_auto', aliases=['myb自动获取', '米游币自动获取', '自动获取米游币'], introduce='自动获取米游币')
-    async def get_mys_coin_auto(msg: Message):
-        ...
+    @bot.my_command(name='get_mys_coin', aliases=['myb获取', '米游币获取', '获取米游币'], introduce='进行一次获取米游币的操作', usage='get_mys_coin [UID]')
+    async def get_mys_coin(msg: Message, *args):
+        if len(args) == 1:
+            await msg.reply('请给你的UID给小派蒙哦~')
+            return
+        uid = args[0]
+        stoken_info = stoken_data.get_private_stoken(msg.author.id)
+        if stoken_info is None:
+            await msg.reply('请旅行者先添加 cookie 和 stoken 哦')
+            return
+        stoken = stoken_info.stoken
+        await msg.reply('开始执行米游社获取，请稍等哦~')
+        get_coin_task = MihoyoBBSCoin(stoken)
+        data = await get_coin_task.task_run()
+        await msg.reply("米游币获取完成\n" + data)
 
     @bot.my_command(name='add_stoken', aliases=['添加stoken'])
-    async def add_stoken(msg: Message):
-        ...
+    async def add_stoken(msg: Message, *args):
+        if len(args) == 1:
+            await msg.reply([
+                Card(
+                    Section(Kmarkdown('缺少参数 `stoken`')),
+                    Section(Kmarkdown('获取 `stoken` 教程'),
+                            accessory=Button(Kmarkdown('访问'), value='https://docs.qq.com/doc/DQ3JLWk1vQVllZ2Z1',
+                                             click='link'))).build()])
+            return
+        stoken = ' '.join(args[:-1])
+        cookie_info = cookie_data.get_user_cookies(msg.author.id)
+        if len(cookie_info) == 0:
+            return
+        uid = list(cookie_info.keys())[0]
+        stoken, mys_id, stoken_info, m = await addStoken(stoken, uid)
+
+        if not stoken_info and not mys_id:
+            await msg.reply(m)
+        if not stoken_info or stoken_info['retcode'] != 0:
+            await msg.reply(cookie_error_msg)
+        else:
+            if uid:
+                stoken_data.add_private_stoken(msg.author.id, uid=uid, mys_id=mys_id, cookie='', stoken=stoken)
+                await msg.reply('stoken绑定成功啦!')
 
     @bot.on_event(EventTypes.MESSAGE_BTN_CLICK)
     async def choice(_: 'LittlePaimonBot', event: Event):

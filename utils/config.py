@@ -131,4 +131,62 @@ class CookieData:
         self.save()
 
 
+class STokenInfo:
+    uid: str
+    mys_id: str
+    cookie: str
+    stoken: str
+
+    def __init__(self, uid, mys_id, cookie, stoken) -> None:
+        self.uid = uid
+        self.mys_id = mys_id
+        self.cookie = cookie
+        self.stoken = stoken
+
+
+class STokenData:
+    stoken: Dict[str, STokenInfo] = {}
+
+    def __init__(self, **data) -> None:
+        stoken = data.get('stoken', {})
+        self.stoken = {}
+        for user_id in stoken:
+            self.stoken[user_id] = STokenInfo(stoken[user_id]['uid'], stoken[user_id]['mys_id'], stoken[user_id]['cookie'], stoken[user_id]['stoken'])
+
+    def save(self):
+        stoken = {}
+        for user_id in self.stoken:
+            stoken[user_id] = {
+                'uid': self.stoken[user_id].uid,
+                'mys_id': self.stoken[user_id].mys_id,
+                'cookie': self.stoken[user_id].cookie,
+                'stoken': self.stoken[user_id].stoken
+            }
+        data = {'stoken': stoken}
+        with open('stoken.yml', 'w', encoding='utf-8') as f:
+            yaml.round_trip_dump(data, f)
+
+    @classmethod
+    def load(cls):
+        if not os.path.exists('stoken.yml'):
+            data = {
+                'stoken': {}
+            }
+            with open('stoken.yml', 'w', encoding='utf-8') as f:
+                yaml.round_trip_dump(data, f)
+            return cls(stoken={})
+        else:
+            with open('stoken.yml', 'r', encoding='utf-8') as f:
+                data = yaml.round_trip_load(f)
+            return cls(**data)
+
+    def add_private_stoken(self, user_id, uid, mys_id, cookie, stoken):
+        self.stoken[user_id] = STokenInfo(uid, mys_id, cookie, stoken)
+        self.save()
+
+    def get_private_stoken(self, user_id):
+        return self.stoken[user_id] if user_id in self.stoken else None
+
+
 cookie_data = CookieData.load()
+stoken_data = STokenData.load()

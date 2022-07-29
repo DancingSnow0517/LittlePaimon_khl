@@ -24,7 +24,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
     # 检查数据文件夹是否存在
     TEMP_PATH.mkdir(parents=True, exist_ok=True)
 
-    @bot.my_regex(name='gacha', regex=r'^抽(?P<num>\d*)十连(?P<pool>\S*) \(met\)(?P<uid>\d+)\(met\)\s$', usage='抽[]十连[池子] e.抽5十连武器', introduce='小派蒙的模拟抽卡')
+    @bot.my_regex(name='gacha', regex=r'^抽(?P<num>\d*)十连(?P<pool>\S*) \(met\)(?P<uid>\d+)\(met\)\s$', usage='抽[次数]十连[池子] e.抽5十连武器', introduce='小派蒙的模拟抽卡')
     async def gacha(msg: Message, *args):
         print(args)
         user = msg.author
