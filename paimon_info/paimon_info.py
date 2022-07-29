@@ -213,7 +213,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 await msg.reply(
                     f'签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
 
-    @bot.my_admin_command(name='mys_sign_all', aliases=['全部重签'])
+    @bot.my_admin_command(name='mys_sign_all', aliases=['全部重签'], introduce='米游社的每日签到重签', usage='直接使用即可')
     async def mys_sign_all(msg: Message, _):
         await msg.ctx.guild.load()
         await msg.reply('正在给服务器所有人进行重新签到')
@@ -237,12 +237,12 @@ async def on_startup(bot: 'LittlePaimonBot'):
                     await user.send(
                         f'=====服务器 {msg.ctx.guild.name} 的管理员的手动全部重签=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
 
-    @bot.my_admin_command(name='update_all', aliases=['更新全部玩家'])
+    @bot.my_admin_command(name='update_all', aliases=['更新全部玩家'], introduce='更新所有人的信息', usage='直接使用即可')
     async def update_all(msg: Message, _):
         res = await all_update()
         await msg.reply(res)
 
-    @bot.my_admin_command(name='add_public_ck', aliases=['添加公共cookie', '添加公共ck'])
+    @bot.my_admin_command(name='add_public_ck', aliases=['添加公共cookie', '添加公共ck'], introduce='添加公共cookie', usage='add_public_ck [cookie]')
     async def add_public_ck(msg: Message, *args):
         if len(args) == 1:
             await msg.reply('小派蒙要你的 cookie 哦')
@@ -252,7 +252,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         await msg.delete()
         await msg.ctx.channel.send('公共 cookie 添加成功！')
 
-    @bot.my_command(name='delete_ck', aliases=['删除ck', '删除cookie'])
+    @bot.my_command(name='delete_ck', aliases=['删除ck', '删除cookie'], introduce='删除你的所有cookie', usage='直接使用即可')
     async def delete_ck(msg: Message, _):
         card = Card(
             Header('是否要删除所有 cookies？'),
@@ -265,7 +265,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         wait_to_rm[msg.author.id] = True
         await msg.reply([card.build()])
 
-    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'])
+    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'], introduce='更新角色信息', usage='update_info [UID]')
     async def update_info(msg: Message, *args):
         if len(args) == 1:
             await msg.reply('请给你的 UID 给小派蒙哦~')
@@ -292,7 +292,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
             role_list = list(player_info.get_update_roles_list().keys())
             await msg.reply(f'uid{uid}更新完成~本次更新的角色有：\n' + ' '.join(role_list))
 
-    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'], introduce='查看指定角色的详细面板信息')
+    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'], introduce='查看指定角色的详细面板信息', usage='role_info [UID] [角色]')
     async def role_info(msg: Message, *args):
         if len(args) <= 2:
             await msg.reply('请给你的UID和要查看的角色给小派蒙哦~')
@@ -311,7 +311,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         roles_list = player_info.get_roles_list()
         if role == 'all':
             if not roles_list:
-                await role_info.finish('你在派蒙这里没有角色面板信息哦，先用 更新角色信息 命令获取吧~', at_sender=True)
+                await msg.reply('你在派蒙这里没有角色面板信息哦，先用 更新角色信息 命令获取吧~', at_sender=True)
             res = '目前已获取的角色面板有：\n'
             for r in roles_list:
                 res += r
