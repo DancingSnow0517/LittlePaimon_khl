@@ -2,19 +2,21 @@ import datetime
 import logging
 import random
 from asyncio import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
-from khl import Message, MessageTypes
-from khl_card import Card
-from khl_card.accessory import Image, Kmarkdown, Button
-from khl_card.modules import Container, Section
+from khl import Message, MessageTypes, EventTypes, Event
+from khl_card import Card, ThemeTypes
+from khl_card.accessory import Image, Kmarkdown, Button, PlainText
+from khl_card.modules import Container, Section, Header, ActionGroup
 
 from paimon_info.draw_abyss_info import draw_abyss_card
 from paimon_info.draw_daily_note import draw_daily_note_card
 from paimon_info.draw_month_info import draw_monthinfo_card
 from paimon_info.draw_player_card import draw_player_card, draw_all_chara_card
+from paimon_info.draw_role_card import draw_role_card
 from paimon_info.get_data import get_abyss_data, get_daily_note_data, get_monthinfo_data, get_player_card_data, \
     get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data
+from utils.alias_handler import get_match_alias
 from utils.config import cookie_data
 from utils.enka_util import PlayerInfo
 
@@ -22,6 +24,8 @@ if TYPE_CHECKING:
     from main import LittlePaimonBot
 
 log = logging.getLogger(__name__)
+
+wait_to_rm: Dict[str, bool] = {}
 
 
 async def on_startup(bot: 'LittlePaimonBot'):
@@ -247,6 +251,104 @@ async def on_startup(bot: 'LittlePaimonBot'):
         cookie_data.add_public_cookie(cookie)
         await msg.delete()
         await msg.ctx.channel.send('公共 cookie 添加成功！')
+
+    @bot.my_command(name='delete_ck', aliases=['删除ck', '删除cookie'])
+    async def delete_ck(msg: Message, _):
+        card = Card(
+            Header('是否要删除所有 cookies？'),
+            ActionGroup(
+                Button(PlainText('YES'), click='return-val', value='delete_ck_yes', theme='danger'),
+                Button(PlainText('NO'), click='return-val', value='delete_ck_no', theme='success')
+            ),
+            theme=ThemeTypes.DANGER
+        )
+        wait_to_rm[msg.author.id] = True
+        await msg.reply([card.build()])
+
+    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'])
+    async def update_info(msg: Message, *args):
+        if len(args) == 1:
+            await msg.reply('请给你的 UID 给小派蒙哦~')
+            return
+        uid = args[0]
+        await msg.reply('派蒙开始更新信息~请稍等哦~')
+        enka_data = await get_enka_data(uid)
+        if not enka_data:
+            if uid[0] == '5' or uid[0] == '2':
+                await msg.reply('暂不支持B服账号哦~请等待开发者更新吧~')
+                return
+            else:
+                await msg.reply('派蒙没有查到该uid的信息哦~')
+                return
+        player_info = PlayerInfo(uid)
+        player_info.set_player(enka_data['playerInfo'])
+        if 'avatarInfoList' not in enka_data:
+            player_info.save()
+            await msg.reply('你未在游戏中打开角色展柜，派蒙查不到~请打开5分钟后再试~')
+        else:
+            for role in enka_data['avatarInfoList']:
+                player_info.set_role(role)
+            player_info.save()
+            role_list = list(player_info.get_update_roles_list().keys())
+            await msg.reply(f'uid{uid}更新完成~本次更新的角色有：\n' + ' '.join(role_list))
+
+    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'], introduce='查看指定角色的详细面板信息')
+    async def role_info(msg: Message, *args):
+        if len(args) <= 2:
+            await msg.reply('请给你的UID和要查看的角色给小派蒙哦~')
+            return
+        uid = args[0]
+        if args[1] in ('a', '全部', '所有', '查看', 'all'):
+            role = 'all'
+        else:
+            match_alias = get_match_alias(args[1], 'roles', True)
+            if match_alias:
+                role = match_alias if isinstance(match_alias, str) else tuple(match_alias.keys())[0]
+            else:
+                await msg.reply(f'哪有名为{args[1]}的角色啊，别拿派蒙开玩笑!')
+                return
+        player_info = PlayerInfo(uid)
+        roles_list = player_info.get_roles_list()
+        if role == 'all':
+            if not roles_list:
+                await role_info.finish('你在派蒙这里没有角色面板信息哦，先用 更新角色信息 命令获取吧~', at_sender=True)
+            res = '目前已获取的角色面板有：\n'
+            for r in roles_list:
+                res += r
+                res += ' ' if (roles_list.index(r) + 1) % 4 else '\n'
+            await msg.reply(res)
+            return
+        if role not in roles_list:
+            await msg.reply(f'派蒙还没有你{role}的信息哦，先用 更新角色信息 命令更新吧~')
+            return
+        else:
+            role_data = player_info.get_roles_info(role)
+            img = await draw_role_card(uid, role_data)
+            img.save('Temp/role_card.png')
+            await msg.reply(await bot.create_asset('Temp/role_card.png'), type=MessageTypes.IMG)
+
+    @bot.my_command(name='get_mys_coin', aliases=['myb获取', '米游币获取', '获取米游币'])
+    async def get_mys_coin(msg: Message):
+        ...
+
+    @bot.my_command(name='get_mys_coin_auto', aliases=['myb自动获取', '米游币自动获取', '自动获取米游币'], introduce='自动获取米游币')
+    async def get_mys_coin_auto(msg: Message):
+        ...
+
+    @bot.my_command(name='add_stoken', aliases=['添加stoken'])
+    async def add_stoken(msg: Message):
+        ...
+
+    @bot.on_event(EventTypes.MESSAGE_BTN_CLICK)
+    async def choice(_: 'LittlePaimonBot', event: Event):
+        value = event.body['value']
+        user_id = event.body['user_id']
+        if user_id not in wait_to_rm:
+            return
+        if wait_to_rm[user_id]:
+            if value == 'delete_ck_yes':
+                cookie_data.delete_user_cookies(user_id)
+            wait_to_rm[user_id] = False
 
 
 async def all_update():

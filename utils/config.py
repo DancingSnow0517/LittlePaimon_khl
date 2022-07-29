@@ -123,5 +123,12 @@ class CookieData:
         self.cookies_statu[cookie] = True
         self.save()
 
+    def delete_user_cookies(self, user_id: str):
+        for uid in list(self.cookies.keys()):
+            if self.cookies[uid].owner == user_id:
+                del self.cookies_statu[self.cookies[uid].cookie]
+                del self.cookies[uid]
+        self.save()
+
 
 cookie_data = CookieData.load()
