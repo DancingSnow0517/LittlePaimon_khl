@@ -26,17 +26,19 @@ class Config:
 
 
 class CookieInfo:
-
     owner: str = ''
+    guild: str = ''
     cookie: str = ''
 
-    def __init__(self, owner: str, cookie: str) -> None:
+    def __init__(self, owner: str, guild: str, cookie: str) -> None:
         self.owner = owner
+        self.guild = guild
         self.cookie = cookie
 
     def to_data(self):
         return {
             'owner': self.owner,
+            'guild': self.guild,
             'cookie': self.cookie
         }
 
@@ -52,12 +54,14 @@ class CookieData:
         self.cookies = {}
         data = data.get('cookies', {})
         for uid in data:
-            self.cookies[uid] = CookieInfo(owner=data[uid]['owner'], cookie=data[uid]['cookie'])
+            self.cookies[uid] = CookieInfo(owner=data[uid]['owner'], guild=data[uid]['guild'],
+                                           cookie=data[uid]['cookie'])
 
     def save(self):
         cookie_info = {}
         for uid in self.cookies:
-            cookie_info[uid] = {'owner': self.cookies[uid].owner, 'cookie': self.cookies[uid].cookie}
+            cookie_info[uid] = {'owner': self.cookies[uid].owner, 'guild': self.cookies[uid].guild,
+                                'cookie': self.cookies[uid].cookie}
         data = {
             'public_cookies': self.public_cookies,
             'cookies': cookie_info,
@@ -85,11 +89,22 @@ class CookieData:
     def get_public_cookies(self):
         return self.public_cookies
 
-    def get_user_cookies(self, user_id: str) -> List[CookieInfo]:
-        return [self.cookies[i] for i in self.cookies if self.cookies[i].owner == user_id]
+    def get_user_cookies(self, user_id: str) -> dict[str, CookieInfo]:
+        ret = {}
+        for i in self.cookies:
+            if self.cookies[i].owner == user_id:
+                ret[i] = self.cookies[i]
+        return ret
+
+    def get_guild_cookies(self, guild_id: str):
+        ret = {}
+        for i in self.cookies:
+            if self.cookies[i].guild == guild_id:
+                ret[i] = self.cookies[i]
+        return ret
 
     def get_cookie_by_uid(self, uid: str) -> CookieInfo:
-        return self.cookies[uid]
+        return self.cookies[uid] if uid in self.cookies else None
 
     def is_cookie_can_use(self, cookie: str) -> bool:
         return self.cookies_statu[cookie]
@@ -103,8 +118,8 @@ class CookieData:
         self.cookies_statu[cookie] = True
         self.save()
 
-    def add_private_cookie(self, uid, user_id: str, cookie: str):
-        self.cookies[uid] = CookieInfo(owner=user_id, cookie=cookie)
+    def add_private_cookie(self, uid, guild_id: str, user_id: str, cookie: str):
+        self.cookies[uid] = CookieInfo(owner=user_id, guild=guild_id, cookie=cookie)
         self.cookies_statu[cookie] = True
         self.save()
 

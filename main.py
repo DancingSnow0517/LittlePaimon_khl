@@ -18,7 +18,7 @@ from paimon_chat import paimon_chat
 from paimon_cloud_genshin import paimon_cloud_genshin
 from paimon_gacha import paimon_gacha
 from paimon_info import paimon_info
-from utils.api import CommandInfo
+from utils.api import CommandInfo, MyRules
 from utils.config import Config
 
 resource_list = load_json(path=Path(__file__).parent / 'resources' / 'resource_list.json')
@@ -65,13 +65,16 @@ class LittlePaimonBot(Bot):
         await paimon_cloud_genshin.on_startup(self)
         await paimon_info.on_startup(self)
 
-    def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍'):
+    def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍', rules=()):
         self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce)
-        return self.command(name=name, aliases=aliases, prefixes=[''], rules=[Rule.is_bot_mentioned(self)])
+        return self.command(name=name, aliases=aliases, prefixes=[''], rules=[Rule.is_bot_mentioned(self)] + list(rules))
 
-    def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍'):
+    def my_admin_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍', rules=()):
+        return self.my_command(name=name + '(仅限管理员)', aliases=aliases, usage=usage, introduce=introduce, rules=[MyRules.is_admin()] + list(rules))
+
+    def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍', rules=()):
         self.help_messages[name] = CommandInfo(name=name, aliases=None, usage=usage, introduce=introduce)
-        return self.command(name=name, regex=regex, prefixes=[''], rules=[Rule.is_bot_mentioned(self)])
+        return self.command(name=name, regex=regex, prefixes=[''], rules=[Rule.is_bot_mentioned(self)] + list(rules))
 
 
 async def download_resources():

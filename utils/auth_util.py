@@ -101,19 +101,19 @@ def get_use_cookie(user_id, uid='', mys_id='', action='') -> Optional[str]:
             log.info(f'派蒙调用公共的 cookie 来执行 {action} 操作')
             return cookie
 
-    for cookie in cookies:
-        if cookie_data.is_cookie_can_use(cookie.cookie):
+    for uid in cookies:
+        if cookie_data.is_cookie_can_use(cookies[uid].cookie):
             log.info(f'使用用户 {user_id} 的 cookie 来执行 {action} 操作')
-            return cookie.cookie
+            return cookies[uid].cookie
 
     return None
 
 
 def get_own_cookie(user_id, uid, action=''):
     info = cookie_data.get_cookie_by_uid(uid)
-    if info.owner != user_id:
+    if info is None or (user_id != '-1' and info.owner != user_id):
         return None
-    log.info(f'使用用户 {user_id} 的 cookie 来执行 {action} 操作')
+    log.info(f'使用用户 {info.owner} 的 cookie 来执行 {action} 操作')
     return info.cookie
 
 

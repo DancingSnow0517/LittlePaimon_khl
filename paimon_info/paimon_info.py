@@ -1,4 +1,7 @@
 import datetime
+import logging
+import random
+from asyncio import sleep
 from typing import TYPE_CHECKING
 
 from khl import Message, MessageTypes
@@ -11,15 +14,18 @@ from paimon_info.draw_daily_note import draw_daily_note_card
 from paimon_info.draw_month_info import draw_monthinfo_card
 from paimon_info.draw_player_card import draw_player_card, draw_all_chara_card
 from paimon_info.get_data import get_abyss_data, get_daily_note_data, get_monthinfo_data, get_player_card_data, \
-    get_chara_detail_data, get_sign_list, get_sign_info, sign
+    get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data
 from utils.config import cookie_data
+from utils.enka_util import PlayerInfo
 
 if TYPE_CHECKING:
     from main import LittlePaimonBot
 
+log = logging.getLogger(__name__)
+
 
 async def on_startup(bot: 'LittlePaimonBot'):
-    @bot.task.add_interval(hours=1)
+    @bot.task.add_interval(hours=1, timezone='Asia/Shanghai')
     async def auto_note():
         for uid in cookie_data.cookies:
             info = cookie_data.get_cookie_by_uid(uid)
@@ -34,6 +40,28 @@ async def on_startup(bot: 'LittlePaimonBot'):
                         return
                     img.save('Temp/note.png')
                     await user.send(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
+
+    @bot.task.add_cron(hour=6, timezone='Asia/Shanghai')
+    async def auto_sign():
+        sign_list = await get_sign_list()
+        cookies = cookie_data.cookies
+        for uid in cookies:
+            user = await bot.fetch_user(cookies[uid].owner)
+            sign_info = await get_sign_info(cookies[uid].owner, uid)
+            if isinstance(sign_info, str):
+                await user.send('=====小派蒙的自动签到=====\n' + sign_info)
+            elif sign_info['data']['is_sign']:
+                sign_day = sign_info['data']['total_sign_day'] - 1
+                await user.send(
+                    f'=====小派蒙的自动签到=====\n你今天已经签过到了哦, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+            else:
+                sign_day = sign_info['data']['total_sign_day']
+                sign_action = await sign(cookies[uid].owner, uid)
+                if isinstance(sign_action, str):
+                    await user.send('=====小派蒙的自动签到=====\n' + sign_action)
+                else:
+                    await user.send(
+                        f'=====小派蒙的自动签到=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
 
     @bot.my_command(name='sy', aliases=['深渊信息', '深境螺旋信息'], introduce='查看深渊战绩信息', usage='sy [uid] [层数]')
     async def sy(msg: Message, *args: str):
@@ -146,12 +174,15 @@ async def on_startup(bot: 'LittlePaimonBot'):
     @bot.my_command(name='ysb', aliases=['原神绑定', '绑定cookie'], usage='原神绑定 [uid] [cookie]')
     async def ysb(msg: Message, *args):
         if len(args) <= 2:
-            card = Card(Section(Kmarkdown('缺少参数 uid 和 cookie')), Section(Kmarkdown('获取 `cookie` 教程: '), accessory=Button(Kmarkdown('访问'), value='https://gitee.com/ultradream/Genshin-Tools', click='link')))
+            card = Card(Section(Kmarkdown('缺少参数 uid 和 cookie')), Section(Kmarkdown('获取 `cookie` 教程: '),
+                                                                         accessory=Button(Kmarkdown('访问'),
+                                                                                          value='https://gitee.com/ultradream/Genshin-Tools',
+                                                                                          click='link')))
             await msg.reply([card.build()])
             return
         uid = args[0]
         cookie = ' '.join(args[1:-1])
-        cookie_data.add_private_cookie(uid, msg.author.id, cookie)
+        cookie_data.add_private_cookie(uid, msg.ctx.guild.id, msg.author.id, cookie)
         await msg.delete()
         await msg.ctx.channel.send(f'cookie 添加成功 (met){msg.author.id}(met)')
 
@@ -168,7 +199,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         elif sign_info['data']['is_sign']:
             sign_day = sign_info['data']['total_sign_day'] - 1
             await msg.reply(
-                f'你今天已经签过到了哦,获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+                f'你今天已经签过到了哦, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
         else:
             sign_day = sign_info['data']['total_sign_day']
             sign_action = await sign(msg.author.id, uid)
@@ -176,4 +207,66 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 await msg.reply(sign_action)
             else:
                 await msg.reply(
-                    f'签到成功,获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+                    f'签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+
+    @bot.my_admin_command(name='mys_sign_all', aliases=['全部重签'])
+    async def mys_sign_all(msg: Message, _):
+        await msg.ctx.guild.load()
+        await msg.reply('正在给服务器所有人进行重新签到')
+        cookies = cookie_data.get_guild_cookies(msg.ctx.guild.id)
+        sign_list = await get_sign_list()
+        for uid in cookies:
+            user = await bot.fetch_user(cookies[uid].owner)
+            sign_info = await get_sign_info(cookies[uid].owner, uid)
+            if isinstance(sign_info, str):
+                await user.send(f'=====服务器 {msg.ctx.guild.name} 的管理员的手动全部重签=====\n' + sign_info)
+            elif sign_info['data']['is_sign']:
+                sign_day = sign_info['data']['total_sign_day'] - 1
+                await user.send(
+                    f'=====服务器 {msg.ctx.guild.name} 的管理员的手动全部重签=====\n你今天已经签过到了哦, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+            else:
+                sign_day = sign_info['data']['total_sign_day']
+                sign_action = await sign(cookies[uid].owner, uid)
+                if isinstance(sign_action, str):
+                    await user.send('=====服务器 {msg.ctx.guild.name} 的管理员的手动全部重签=====\n' + sign_action)
+                else:
+                    await user.send(
+                        f'=====服务器 {msg.ctx.guild.name} 的管理员的手动全部重签=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+
+    @bot.my_admin_command(name='update_all', aliases=['更新全部玩家'])
+    async def update_all(msg: Message, _):
+        res = await all_update()
+        await msg.reply(res)
+
+    @bot.my_admin_command(name='add_public_ck', aliases=['添加公共cookie', '添加公共ck'])
+    async def add_public_ck(msg: Message, *args):
+        if len(args) == 1:
+            await msg.reply('小派蒙要你的 cookie 哦')
+            return
+        cookie = ' '.join(args[:-1])
+        cookie_data.add_public_cookie(cookie)
+        await msg.delete()
+        await msg.ctx.channel.send('公共 cookie 添加成功！')
+
+
+async def all_update():
+    uid_list = cookie_data.cookies
+    log.info('派蒙开始更新用户角色信息，共 {} 个用户'.format(len(uid_list)))
+    failed_time = 0
+    for uid in uid_list:
+        try:
+            data = await get_enka_data(uid)
+            if data:
+                player_info = PlayerInfo(uid)
+                player_info.set_player(data['playerInfo'])
+                if 'avatarInfoList' in data:
+                    for role in data['avatarInfoList']:
+                        player_info.set_role(role)
+                player_info.save()
+                log.info(f'---派蒙更新{uid}的角色信息成功---')
+            await sleep(random.randint(8, 15))
+        except Exception:
+            failed_time += 1
+            if failed_time > 5:
+                break
+    return '玩家信息uid更新共 {} 个，更新完成'.format(len(uid_list))

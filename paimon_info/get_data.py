@@ -1,4 +1,5 @@
 import json
+from asyncio import sleep
 
 from littlepaimon_utils import aiorequests
 
@@ -175,3 +176,14 @@ async def sign(user_id, uid):
         return data
     else:
         return f'你的uid{uid}的cookie已过期,需要重新绑定哦!'
+
+
+async def get_enka_data(uid):
+    for _ in range(3):
+        try:
+            url = f'https://enka.shinshin.moe/u/{uid}/__data.json'
+            resp = await aiorequests.get(url=url, follow_redirects=True)
+            data = resp.json()
+            return data
+        except Exception:
+            await sleep(1.5)
