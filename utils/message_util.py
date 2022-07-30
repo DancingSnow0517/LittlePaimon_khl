@@ -1,11 +1,13 @@
 import pathlib
 import time
 from io import BytesIO
+from os import getcwd
 from typing import Optional, TYPE_CHECKING
 
 from PIL import Image
 
 from utils import requests
+from utils.browser import get_new_page
 
 if TYPE_CHECKING:
     from main import LittlePaimonBot
@@ -52,6 +54,25 @@ class MessageBuilder:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(await requests.get_voice('https://static.cherishmoon.fun/' + url))
         return await bot.create_asset(f'{bot.config.data_path}/{url}')
+
+
+async def html_to_pic(html: str, wait: int = 0, template_path: str = f"file://{getcwd()}", **kwargs) -> bytes:
+    """
+    html转图片
+    :param html: html文本
+    :param wait: 等待时间. Defaults to 0.
+    :param template_path: 模板路径 如 "file:///path/to/template/"
+    :return: 图片
+    """
+    # logger.debug(f"html:\n{html}")
+    if "file:" not in template_path:
+        raise Exception("template_path 应该为 file:///path/to/template")
+    async with get_new_page(**kwargs) as page:
+        await page.goto(template_path)
+        await page.set_content(html, wait_until="networkidle")
+        await page.wait_for_timeout(wait)
+        img_raw = await page.screenshot(full_page=True)
+    return img_raw
 
 
 def check_time(time_stamp, day=1) -> bool:

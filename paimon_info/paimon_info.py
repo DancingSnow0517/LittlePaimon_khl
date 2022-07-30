@@ -38,7 +38,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
             info = cookie_data.get_cookie_by_uid(uid)
             data = await get_daily_note_data(info.owner, uid)
             if not isinstance(data, str):
-                if data['current_resin'] >= 140:
+                if data['data']['current_resin'] >= 140:
                     user = await bot.fetch_user(info.owner)
                     await user.send('树脂快要溢出了~~~')
                     img = await draw_daily_note_card(data, uid)

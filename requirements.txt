@@ -10,6 +10,7 @@ uuid>=1.30
 khl.py>=0.2.16
 KaiheilaCardBuilder>=1.2.4
 littlepaimon_utils>=1.0.2
-matplotlib
+matplotlib>=3.5.2
 ruamel.yaml~=0.17
 lxml>=4.8.0
+playwright>=1.22.0
