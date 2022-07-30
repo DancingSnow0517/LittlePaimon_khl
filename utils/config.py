@@ -8,11 +8,13 @@ class Config:
     token: str = ''
     log_level: str = 'INFO'
     data_path: str = 'data'
+    botmarket_uuid: str = ''
 
     def __init__(self, **data) -> None:
         self.log_level = data.get('log_level')
         self.token = data.get('token', '')
         self.data_path = data.get('data_path', 'data')
+        self.botmarket_uuid = data.get('botmarket_uuid', '')
 
     @classmethod
     def load(cls) -> 'Config':
@@ -190,6 +192,6 @@ class STokenData:
     def get_all_stoken(self):
         return self.stoken
 
-
+config = Config.load()
 cookie_data = CookieData.load()
 stoken_data = STokenData.load()

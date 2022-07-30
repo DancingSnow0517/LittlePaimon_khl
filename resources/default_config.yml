@@ -6,3 +6,7 @@ log_level: INFO
 
 # set LittlePaimon data path
 data_path: 'data'
+
+# botmarket_uuid
+
+botmarket_uuid: ''

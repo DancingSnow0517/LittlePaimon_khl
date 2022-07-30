@@ -11,17 +11,17 @@ from khl.command import Rule
 from khl_card import Card
 from khl_card.accessory import Kmarkdown
 from khl_card.modules import Section, Context
+from littlepaimon_utils.aiorequests import post
 from littlepaimon_utils.files import load_json, download
 
 from guess_voice import guess_voice
+from paimon_calendar import paimon_calendar
 from paimon_chat import paimon_chat
 from paimon_cloud_genshin import paimon_cloud_genshin
 from paimon_gacha import paimon_gacha
 from paimon_info import paimon_info
-from paimon_calendar import paimon_calendar
-
 from utils.api import CommandInfo, MyRules
-from utils.config import Config
+from utils.config import config
 
 resource_list = load_json(path=Path(__file__).parent / 'resources' / 'resource_list.json')
 resource_path = Path().cwd() / 'resources' / 'LittlePaimon'
@@ -35,7 +35,7 @@ class LittlePaimonBot(Bot):
     help_messages: Dict[str, CommandInfo] = {}
 
     def __init__(self):
-        self.config = Config.load()
+        self.config = config
         super().__init__(self.config.token)
         logging.basicConfig(level=self.config.log_level,
                             format='[%(asctime)s] [%(module)s] [%(threadName)s/%(levelname)s]: %(message)s')
@@ -68,14 +68,19 @@ class LittlePaimonBot(Bot):
         await paimon_info.on_startup(self)
         await paimon_calendar.on_startup(self)
 
-    def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍', rules=()):
+    def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
+                   rules=()):
         self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce)
-        return self.command(name=name, aliases=aliases, prefixes=[''], rules=[Rule.is_bot_mentioned(self)] + list(rules))
+        return self.command(name=name, aliases=aliases, prefixes=[''],
+                            rules=[Rule.is_bot_mentioned(self)] + list(rules))
 
-    def my_admin_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍', rules=()):
-        return self.my_command(name=name + '(仅限管理员)', aliases=aliases, usage=usage, introduce=introduce, rules=[MyRules.is_admin()] + list(rules))
+    def my_admin_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助',
+                         introduce: str = '暂无命令介绍', rules=()):
+        return self.my_command(name=name + '(仅限管理员)', aliases=aliases, usage=usage, introduce=introduce,
+                               rules=[MyRules.is_admin()] + list(rules))
 
-    def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍', rules=()):
+    def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
+                 rules=()):
         self.help_messages[name] = CommandInfo(name=name, aliases=None, usage=usage, introduce=introduce)
         return self.command(name=name, regex=regex, prefixes=[''], rules=[Rule.is_bot_mentioned(self)] + list(rules))
 
@@ -115,6 +120,11 @@ def main():
                 card = Card(Section(Kmarkdown(f'未找到命令 {args[0]}')))
         card.append(Context(Kmarkdown(f'当前小派蒙版本: {VERSION}')))
         await msg.reply([card.build()])
+
+    # 预留 botmarket 的在线检测
+    @bot.task.add_interval(minutes=30, timezone='Asia/Shanghai')
+    async def check_online():
+        await post('http://bot.gekj.net/api/v1/online.bot', headers={'uuid': config.botmarket_uuid})
 
     bot.run()
 
