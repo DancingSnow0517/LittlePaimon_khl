@@ -4,21 +4,24 @@ import random
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, List, Dict, Tuple
 
-from khl import Message, Channel, User
+from khl import Message, Channel, User, MessageTypes
 from khl_card.accessory import *
 from khl_card.card import Card
 from khl_card.modules import *
 from khl_card.types import ThemeTypes
+from littlepaimon_utils.files import load_json
 
 from . import download_data
 
 if TYPE_CHECKING:
     from main import LittlePaimonBot
 
-guess_games: Dict[str, 'GuessVoice']
+guess_games: Dict[str, 'GuessVoice'] = {}
 voice_data: dict
 
 languages = Literal['中', '日', '英', '韩']
+
+char_alias = load_json(Path() / 'utils' / 'json_data' / 'alias.json')
 
 
 # 获取原神语音
@@ -39,8 +42,6 @@ async def update(data_path) -> dict:
 async def on_startup(bot: 'LittlePaimonBot'):
     global guess_games
     await update(bot.config.data_path)
-
-    guess_games = {}
 
     @bot.my_command(name='update_voice', aliases=['更新原神语音资源'], usage='更新原神语音资源',
                     introduce='更新原神猜语言游戏的语音资源')
@@ -72,18 +73,21 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 lang = '中'
         await game.start(game_time, lang)
 
-    @bot.command(name='guess', prefixes=[''], aliases=[i for i in voice_data])
+    role_map = {}
+    for i in char_alias['roles']:
+        t = char_alias['roles'][i]
+        for n in t:
+            role_map[n] = t[0]
+
+    @bot.command(name='guess', prefixes=[''], aliases=list(role_map.keys()))
     async def guess(msg: Message):
         game = guess_games.get(msg.ctx.channel.id, None)
         if game is None:
             return
 
-        print(game.statu)
-        print(msg.content)
-        print(game.info.char)
         if game.statu:
-            char = msg.content
-            if char == game.info.char:
+            char = role_map[msg.content]
+            if not game.info.is_answered and char == game.info.char:
                 await msg.reply('恭喜你，答对了')
                 await game.add_score(msg.author)
                 await game.next()
@@ -96,10 +100,10 @@ class GuessInfo:
         self.char = char
         self.language = language
         self.text = text
+        self.is_answered = False
 
     async def send(self, channel: Channel, game: 'GuessVoice'):
         card = Card(Audio(self.url, f'第 {game.count} 题', ''), theme=ThemeTypes.NONE)
-        print(card.build())
         await channel.send([card.build()])
 
     def __str__(self) -> str:
@@ -126,7 +130,7 @@ class GuessVoice:
         if self.statu:
             await self.channel.send('原神猜语音游戏已经开始了')
         else:
-            await self.channel.send(f'正在开始原神猜语音游戏\n时间: {time} s 语言: {language}')
+            await self.channel.send(f'正在开始原神猜语音游戏\n时间: **{time}** s 语言: **{language}**\n直接在频道输入角色名字视为答题', type=MessageTypes.KMD)
             self.statu = True
             self.time = time
             self.language = language
@@ -155,10 +159,6 @@ class GuessVoice:
         voice_path = Path(self.bot.config.data_path) / 'voices'
         char = random.sample(voice_data.keys(), 1)[0]
         voice = random.randint(1, len(voice_data[char]))
-        # chars = os.listdir(voice_path)  # type: List[str]
-        # char = random.choice(chars)
-        # voices = os.listdir(voice_path / char / self.language)  # type: List[str]
-        # voice = random.choice(voices)
         try:
             url = await self.bot.create_asset((voice_path / char / self.language / (str(voice) + '.mp3')).__str__())
         except FileNotFoundError:
