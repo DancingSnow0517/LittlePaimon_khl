@@ -2,7 +2,7 @@ import datetime
 import logging
 import random
 from asyncio import sleep
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 
 from khl import Message, MessageTypes, EventTypes, Event
 from khl_card import Card, ThemeTypes
@@ -30,26 +30,34 @@ wait_to_rm: Dict[str, bool] = {}
 
 cookie_error_msg = '这个cookie无效哦，请旅行者确认是否正确\n1.ck要登录mys帐号后获取,且不能退出登录\n\n获取cookie的教程：\ndocs.qq.com/doc/DQ3JLWk1vQVllZ2Z1\n'
 
+is_reminded: List[str] = []
+
 
 async def on_startup(bot: 'LittlePaimonBot'):
     @bot.task.add_interval(hours=1, timezone='Asia/Shanghai')
     async def auto_note():
+        global is_reminded
         for uid in cookie_data.cookies:
+            if uid in is_reminded:
+                continue
             info = cookie_data.get_cookie_by_uid(uid)
             data = await get_daily_note_data(info.owner, uid)
             if not isinstance(data, str):
                 if data['data']['current_resin'] >= 140:
                     user = await bot.fetch_user(info.owner)
-                    await user.send('树脂快要溢出了~~~')
+                    await user.send('树脂快要溢出了~~~' if data['data']['current_resin'] < 160 else '树脂溢出了~~~')
                     img = await draw_daily_note_card(data, uid)
                     if isinstance(img, str):
                         await user.send(img)
                         return
                     img.save('Temp/note.png')
                     await user.send(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
+                    is_reminded.append(uid)
 
     @bot.task.add_cron(hour=6, timezone='Asia/Shanghai')
     async def auto_sign():
+        global is_reminded
+        is_reminded.clear()
         sign_list = await get_sign_list()
         cookies = cookie_data.cookies
         for uid in cookies:
@@ -159,6 +167,9 @@ async def on_startup(bot: 'LittlePaimonBot'):
             await msg.reply('原神卡片数据获取失败')
         else:
             chara_data = await get_chara_detail_data(msg.author.id, uid)
+            if isinstance(chara_data, str):
+                await msg.reply(chara_data)
+                return
             player_card = await draw_player_card(data, chara_data, uid, msg.author.nickname)
             if isinstance(player_card, str):
                 await msg.reply(player_card)

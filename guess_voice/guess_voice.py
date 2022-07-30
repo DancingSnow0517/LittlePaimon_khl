@@ -23,6 +23,9 @@ languages = Literal['中', '日', '英', '韩']
 
 char_alias = load_json(Path() / 'utils' / 'json_data' / 'alias.json')
 
+# 以防同时回答
+guess_lock = asyncio.Lock()
+
 
 # 获取原神语音
 async def update(data_path) -> dict:
@@ -81,16 +84,19 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.command(name='guess', prefixes=[''], aliases=list(role_map.keys()))
     async def guess(msg: Message):
+        await guess_lock.acquire()
         game = guess_games.get(msg.ctx.channel.id, None)
         if game is None:
+            guess_lock.release()
             return
 
         if game.statu:
             char = role_map[msg.content]
-            if not game.info.is_answered and char == game.info.char:
+            if char == game.info.char:
                 await msg.reply('恭喜你，答对了')
                 await game.add_score(msg.author)
                 await game.next()
+        guess_lock.release()
 
 
 class GuessInfo:
@@ -100,14 +106,14 @@ class GuessInfo:
         self.char = char
         self.language = language
         self.text = text
-        self.is_answered = False
 
     async def send(self, channel: Channel, game: 'GuessVoice'):
         card = Card(Audio(self.url, f'第 {game.count} 题', ''), theme=ThemeTypes.NONE)
         await channel.send([card.build()])
+        print(self)
 
     def __str__(self) -> str:
-        return f"{self.char}: {self.text}"
+        return f"当前角色: {self.char}"
 
 
 class GuessVoice:
