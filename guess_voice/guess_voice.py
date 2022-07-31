@@ -1,13 +1,14 @@
 import asyncio
 import json
 import random
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, List, Dict, Tuple
 
 from khl import Message, Channel, User, MessageTypes
 from khl_card.accessory import *
 from khl_card.card import Card
-from khl_card.modules import *
+from khl_card.modules import Header, Countdown, Audio, Section
 from khl_card.types import ThemeTypes
 from littlepaimon_utils.files import load_json
 
@@ -92,6 +93,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
         if game.statu:
             char = role_map[msg.content]
+            if char == '空' or char == '荧':
+                char = '旅行者'
             if char == game.info.char:
                 await msg.reply('恭喜你，答对了')
                 await game.add_score(msg.author)
@@ -132,13 +135,14 @@ class GuessVoice:
         self.bot = bot
         self.channel = msg.ctx.channel
 
-    async def start(self, time: int = 30, language: languages = '中') -> None:
+    async def start(self, game_time: int = 30, language: languages = '中') -> None:
         if self.statu:
             await self.channel.send('原神猜语音游戏已经开始了')
         else:
-            await self.channel.send(f'正在开始原神猜语音游戏\n时间: **{time}** s 语言: **{language}**\n直接在频道输入角色名字视为答题', type=MessageTypes.KMD)
+            await self.channel.send(f'正在开始原神猜语音游戏\n时间: **{game_time}** s 语言: **{language}**\n直接在频道输入角色名字视为答题', type=MessageTypes.KMD)
+            await self.channel.send([Card(Header('游戏倒计时：'), Countdown(int(time.time() * 1000 + game_time * 1000), mode='second', starttime=int(time.time() * 1000))).build()])
             self.statu = True
-            self.time = time
+            self.time = game_time
             self.language = language
             self.score = {}
             self.count = 0
