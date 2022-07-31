@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Pattern
 
-from khl import Bot, Message
+from khl import Bot, Message, EventTypes, Event
 from khl.command import Rule
 from khl_card import Card
 from khl_card.accessory import Kmarkdown
@@ -124,6 +124,12 @@ def main():
 
     # 预留 botmarket 的在线检测
     bot.task.add_interval(minutes=30, timezone='Asia/Shanghai')(check_online)
+
+    @bot.on_event(EventTypes.SELF_JOINED_GUILD)
+    async def on_joined_guild(bot: LittlePaimonBot, event: Event):
+        guild_id = event.body['guild_id']
+        guild = await bot.fetch_guild(guild_id)
+        log.info(f'小派蒙加入服务器 {guild.name}, id: {guild.id}')
 
     bot.run()
 
