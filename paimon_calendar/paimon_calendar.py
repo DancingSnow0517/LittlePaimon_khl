@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 async def on_startup(bot: 'LittlePaimonBot'):
-    @bot.my_command(name='calendar')
+    @bot.my_command(name='calendar', aliases=['原神日历', '原神日程', 'ysrl', 'ysrc'], introduce='查看原神活动日历', usage='直接使用即可')
     async def calendar(msg: Message, _):
         server = 'cn'
         im = await generate_day_schedule(server)

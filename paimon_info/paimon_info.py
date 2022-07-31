@@ -370,7 +370,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         data = await get_coin_task.task_run()
         await msg.reply("米游币获取完成\n" + data)
 
-    @bot.my_command(name='add_stoken', aliases=['添加stoken'])
+    @bot.my_command(name='add_stoken', aliases=['添加stoken'], introduce='绑定你的stoken，来支持米游币相关的操作', usage='add_stoken [stoken]')
     async def add_stoken(msg: Message, *args):
         if len(args) == 1:
             await msg.reply([
