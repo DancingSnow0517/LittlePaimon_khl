@@ -59,6 +59,7 @@ class LittlePaimonBot(Bot):
         await super().start()
 
     async def on_startup(self):
+        await check_online()
         await download_resources()
 
         await paimon_chat.on_startup(self)
@@ -122,11 +123,14 @@ def main():
         await msg.reply([card.build()])
 
     # 预留 botmarket 的在线检测
-    @bot.task.add_interval(minutes=30, timezone='Asia/Shanghai')
-    async def check_online():
-        await post('http://bot.gekj.net/api/v1/online.bot', headers={'uuid': config.botmarket_uuid})
+    bot.task.add_interval(minutes=30, timezone='Asia/Shanghai')(check_online)
 
     bot.run()
+
+
+async def check_online():
+    res = await post('http://bot.gekj.net/api/v1/online.bot', headers={'uuid': config.botmarket_uuid})
+    log.info(res.json()['msg'])
 
 
 if __name__ == '__main__':
