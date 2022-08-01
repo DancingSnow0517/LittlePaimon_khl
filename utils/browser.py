@@ -1,6 +1,5 @@
 import logging
 from contextlib import asynccontextmanager
-from sys import platform
 from typing import AsyncIterator, Optional
 
 from playwright.async_api import Page, Browser, Playwright, async_playwright, Error
@@ -25,10 +24,7 @@ async def init(**kwargs) -> Browser:
 
 async def launch_browser(**kwargs) -> Browser:
     assert _playwright is not None, "Playwright is not initialized"
-    if "win" in platform.lower():
-        return await _playwright.chromium.launch(**kwargs)
-    else:
-        return await _playwright.firefox.launch(**kwargs)
+    return await _playwright.chromium.launch(**kwargs)
 
 
 async def get_browser(**kwargs) -> Browser:
@@ -57,12 +53,8 @@ async def install_browser():
     import os
 
     from playwright.__main__ import main
-    if "win" in platform.lower():
-        log.info("正在安装 chromium")
-        sys.argv = ["", "install", "chromium"]
-    else:
-        log.info("正在安装 firefox")
-        sys.argv = ["", "install", "firefox"]
+    log.info("正在安装 chromium")
+    sys.argv = ["", "install", "chromium"]
     try:
         log.info("正在安装依赖")
         os.system("playwright install-deps")
