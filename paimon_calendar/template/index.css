@@ -1,6 +1,6 @@
 @font-face {
   font-family: "FFXIV-EN";
-  src: url("~/assets/font/EORZEA.TTF") format("truetype");
+  src: url("../../resources/LittlePaimon/hywh.ttf") format("truetype");
 }
 .xiv-en {
   font-family: "FFXIV-EN", sans-serif;
