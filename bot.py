@@ -5,7 +5,7 @@ import os.path
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Pattern
 
-from khl import Bot, Message, EventTypes, Event
+from khl import Bot, Message, EventTypes, Event, MessageTypes
 from khl.command import Rule
 from khl_card import Card
 from khl_card.accessory import Kmarkdown, Button
@@ -173,7 +173,6 @@ def main():
             card.append(Context(Kmarkdown(f'当前小派蒙版本: {VERSION}')))
             await target.send([card.build()])
             return
-
 
     bot.run()
 
