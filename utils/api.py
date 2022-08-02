@@ -14,7 +14,7 @@ class CommandGroups(Enum):
     CLOUD_GENSHIN = '云原神'
 
     def build_button(self) -> Button:
-        return Button(Kmarkdown(f'查看 **{str(self.value)}** 分组'), value=f'command_group_{self.name}',
+        return Button(Kmarkdown(f'查看 **{str(self.value)}** 分组的命令'), value=f'command_group_{self.name}',
                       click='return-val', theme='info')
 
 
@@ -37,15 +37,6 @@ class CommandInfo:
         # kmd = f'**{self.introduce}**\n---\n> **别名: **{", ".join(self.aliases) if self.aliases is not None else "无"}\n**用法: **`{self.usage}`'
         kmd = f'---\n**{self.name} 命令使用帮助**\n> **别名: **{", ".join(self.aliases) if self.aliases is not None else "无"}\n**描述: **{self.introduce}\n**用法: **{self.usage}\n**分组: **{", ".join([str(group.value) for group in self.groups])}'
         return Section(Kmarkdown(kmd))
-
-    def is_in_group(self, group: Union[str, CommandGroups]) -> bool:
-        if isinstance(group, str):
-            for g in self.groups:
-                if g.name == group:
-                    return True
-            return False
-        else:
-            return group in self.groups
 
 
 class MyRules:

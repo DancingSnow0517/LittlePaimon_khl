@@ -9,7 +9,7 @@ from khl import Bot, Message, EventTypes, Event
 from khl.command import Rule
 from khl_card import Card
 from khl_card.accessory import Kmarkdown, Button
-from khl_card.modules import Section, Context, ActionGroup, Divider, Header
+from khl_card.modules import Section, Context, ActionGroup, Divider, Header, Invite
 from littlepaimon_utils.aiorequests import post
 from littlepaimon_utils.files import load_json, download
 
@@ -68,9 +68,11 @@ class LittlePaimonBot(Bot):
         await paimon_info.on_startup(self)
         await paimon_calendar.on_startup(self)
 
-    def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
+    def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助',
+                   introduce: str = '暂无命令介绍',
                    rules=(), group: List[CommandGroups] = ()):
-        self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce, group=group)
+        self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce,
+                                               group=group)
         return self.command(name=name, aliases=aliases, prefixes=['！！', '!!'],
                             rules=list(rules))
 
@@ -79,7 +81,8 @@ class LittlePaimonBot(Bot):
         return self.my_command(name=name + '(仅限管理员)', aliases=aliases, usage=usage, introduce=introduce,
                                rules=[MyRules.is_admin()] + list(rules), group=group)
 
-    def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
+    def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助',
+                 introduce: str = '暂无命令介绍',
                  rules=(), group: List[CommandGroups] = ()):
         self.help_messages[name] = CommandInfo(name=name, aliases=None, usage=usage, introduce=introduce, group=group)
         return self.command(name=name, regex=regex, prefixes=[''], rules=[Rule.is_bot_mentioned(self)] + list(rules))
@@ -110,12 +113,24 @@ def main():
     async def print_help_message(msg: Message, command: str = None):
         if command is None:
             card = Card(
-                Section(Kmarkdown(f'现在小派蒙所有命令只需要在前面添加`!!`\n不用 (met){bot.me.id}(met) '
-                                  f'了~(部分命令还需要 (met){bot.me.id}(met), 会有特别标注)')),
-                Section(Kmarkdown('命令中的 `[]` 不用加进去。')),
+                Header('小派蒙的帮助信息'),
+                Section(Kmarkdown(f'现在小派蒙所有命令只需要在前面添加`!!`\n不需要 (met){bot.me.id}(met) '
+                                  f'了~\n部分命令还需要 (met){bot.me.id}(met), 会有特别标注')),
+                Section(
+                    Kmarkdown('命令中的 `[ ]` 不用加进去。\n例: `[UID]` 只需要将这个替换为你的 `UID`。`[cookie]` 同理')),
                 ActionGroup(
                     *[group.build_button() for group in CommandGroups]
-                )
+                ),
+                Divider(),
+                # Section(Kmarkdown('**快捷命令**')),
+                # ActionGroup(
+                #     Button(Kmarkdown('更新角色信息'), value='update_role_info', click='return-val'),
+                #     Button(Kmarkdown('一键签到'), value='sign_all', click='return-val'),
+                #     Button(Kmarkdown('实时便签'), value='note', click='return-val')
+                # ),
+                # Divider(),
+                Section(Kmarkdown(f'在使用 (met){bot.me.id}(met) 过程中遇到的问题，可以来的官方频道询问')),
+                Invite('s69UmB')
             )
         else:
             info = bot.search_command(command)
@@ -141,8 +156,9 @@ def main():
         user_id: str = event.body['user_id']
         channel_id: str = event.body['target_id']
         channel_type = event.body['channel_type']
-        target = await bot.fetch_public_channel(channel_id) if channel_type == 'GROUP' else await bot.fetch_user(user_id)
         if value.startswith('command_group_'):
+            target = await bot.fetch_public_channel(channel_id) if channel_type == 'GROUP' else await bot.fetch_user(
+                user_id)
             g = None
             for g in CommandGroups:
                 if g.name == value.replace('command_group_', ''):
@@ -165,6 +181,3 @@ def main():
 async def check_online():
     res = await post('http://bot.gekj.net/api/v1/online.bot', headers={'uuid': config.botmarket_uuid})
     log.info(res.json()['msg'])
-
-
-
