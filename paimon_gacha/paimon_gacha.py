@@ -60,7 +60,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         await msg.reply([(await build_gacha_card(img_list, bot)).build()])
 
     @bot.my_command(name='show_log', aliases=['模拟抽卡记录', '查看模拟抽卡记录'], introduce='查看在小派蒙这边的模拟抽卡记录', usage='直接使用即可')
-    async def show_log(msg: Message, show_type: str = None, _: str = None):
+    async def show_log(msg: Message, show_type: str = None):
         res_card = Card(color=NamedColor.AQUA)
         uid = msg.author.id
         init_user_info(uid)
@@ -119,7 +119,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         await msg.reply([res_card.build()])
 
     @bot.my_command(name='delete_log', aliases=['删除模拟抽卡记录'], usage='直接使用即可', introduce='删除你在小派蒙这里模拟抽卡的记录')
-    async def delete_log(msg: Message, _):
+    async def delete_log(msg: Message):
         uid = msg.author.id
         init_user_info(uid)
         try:
@@ -131,9 +131,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.my_command(name='choose_dg', aliases=['选择定轨'], usage='选择定轨 [武器]', introduce='选择模拟抽卡的定轨')
     async def choose_dg(msg: Message, *args):
-        print(args)
         uid = msg.author.id
-        if len(args) == 2:
+        if len(args) == 1:
             dg_weapon = args[0]
             weapon_up_list = await get_dg_weapon()
             if dg_weapon not in weapon_up_list:
@@ -146,9 +145,11 @@ async def on_startup(bot: 'LittlePaimonBot'):
                     user_info[uid]['gacha_list']['dg_time'] = 0
                     save_user_info()
                     await msg.reply(f'定轨成功，定轨能量值已重置，当前定轨武器为：{dg_weapon}')
+        else:
+            await msg.reply('缺少参数 武器')
 
     @bot.my_command(name='delete_dg', aliases=['删除定轨'], usage='直接使用即可', introduce='删除你在小派蒙这里模拟抽卡的定轨')
-    async def delete_dg(msg: Message, _):
+    async def delete_dg(msg: Message):
         uid = msg.author.id
         init_user_info(uid)
         if user_info[uid]['gacha_list']['dg_name'] == '':
@@ -160,7 +161,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
             await msg.reply('你的定轨记录删除成功')
 
     @bot.my_command(name='show_dg', aliases=['显示定轨'], usage='直接使用即可', introduce='查看你在小派蒙这里模拟抽卡的定轨')
-    async def show_dg(msg: Message, _):
+    async def show_dg(msg: Message):
         uid = msg.author.id
         init_user_info(uid)
         weapon_up_list = await get_dg_weapon()

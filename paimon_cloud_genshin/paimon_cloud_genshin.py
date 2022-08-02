@@ -54,18 +54,18 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.my_command(name='cloud_ys', aliases=['云原神', 'yys'], usage='具体使用方法直接输入本命令查看', introduce='云原神相关命令')
     async def cloud_ys(msg: Message, *args):
-        uid = msg.author.id
+        user_id = msg.author.id
         data = load_json(Path() / 'data' / 'LittlePaimon' / 'CloudGenshin.json')
 
-        if len(args) == 1:
+        if len(args) == 0:
             card = Card(
-                Header(f'亲爱的旅行者: {uid}'),
+                Header(f'亲爱的旅行者: {user_id}'),
                 Section(Kmarkdown('**本命令的食用方法：**')),
                 Section(Kmarkdown('**云原神|yys** [绑定] 绑定云原神的 `token` 到你的 `kook` 账户上 ')),
                 Section(Kmarkdown('**云原神|yys** [信息] 查询云原神账户信息')),
                 Section(Kmarkdown('有关如何抓取 `token` 的方法:'), accessory=Button(text=PlainText('访问'), value='https://blog.ethreal.cn/archives/yysgettoken', click='link'))
             )
-            message = f'亲爱的旅行者: {uid}\n\n' \
+            message = f'亲爱的旅行者: {user_id}\n\n' \
                       '本插件食用方法:\n' \
                       '<云原神/yys> [绑定/bind] 绑定云原神token\n' \
                       '<云原神/yys> [信息/info] 查询云原神账户信息\n\n' \
@@ -76,8 +76,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
         elif args[0] in ['绑定', 'bind']:
             token = " ".join(args[1:-1])
 
-            data[uid] = {
-                'uid': uid,
+            data[user_id] = {
+                'uid': user_id,
                 'uuid': uu,
                 'limit': 600,
                 'isFullTime': False,
@@ -85,11 +85,14 @@ async def on_startup(bot: 'LittlePaimonBot'):
             }
 
             save_json(data=data, path=Path() / 'data' / 'LittlePaimon' / 'CloudGenshin.json')
-            await msg.reply(f'[UID:{uid}]已绑定token, 将在每天6点为你自动签到!')
+            await msg.reply(f'[UID:{user_id}]已绑定token, 将在每天6点为你自动签到!')
         elif args[0] in ['信息', 'info']:
-            token = data[uid]['token']
-            uid = data[uid]['uid']
-            uuid = data[uid]['uuid']
+            if user_id not in data:
+                await msg.reply('你还没有在小派蒙这里绑定云原神token')
+                return
+            token = data[user_id]['token']
+            user_id = data[user_id]['uid']
+            uuid = data[user_id]['uuid']
 
             result = await get_Info(uuid, token)
 
@@ -105,11 +108,11 @@ async def on_startup(bot: 'LittlePaimonBot'):
             message = '======== UID: {0} ========\n' \
                       '剩余米云币: {1}\n' \
                       '剩余免费时间: {2}分钟\n' \
-                      '畅玩卡状态: {3}'.format(uid, coins, free_time, card)
+                      '畅玩卡状态: {3}'.format(user_id, coins, free_time, card)
             await msg.reply(message)
 
     @bot.my_command(name='rm_cloud_ys', aliases=['云原神解绑', 'yys解绑', 'yys解除绑定', 'yysdel'], usage='直接使用即可', introduce='解除你的云原神与kook的绑定')
-    async def rm_cloud_ys(msg: Message, _):
+    async def rm_cloud_ys(msg: Message):
         card = Card(
             Header('是否要解绑token并取消自动签到？'),
             ActionGroup(
@@ -124,17 +127,20 @@ async def on_startup(bot: 'LittlePaimonBot'):
     @bot.on_event(EventTypes.MESSAGE_BTN_CLICK)
     async def choice(_: 'LittlePaimonBot', event: Event):
         value = event.body['value']
-        uid = event.body['user_id']
-        if uid not in wait_to_rm:
+        user_id = event.body['user_id']
+        if user_id not in wait_to_rm:
             return
-        if wait_to_rm[uid]:
+        if wait_to_rm[user_id]:
             if value == 'rm_cloud_ys_yes':
-                wait_to_rm[uid] = False
+                wait_to_rm[user_id] = False
                 data = load_json(Path() / 'data' / 'LittlePaimon' / 'CloudGenshin.json')
-                del data[uid]
+                if user_id not in data:
+                    await (await bot.fetch_user(user_id)).send('你还没有在小派蒙这里绑定云原神token')
+                    return
+                del data[user_id]
                 save_json(data, Path() / 'data' / 'LittlePaimon' / 'CloudGenshin.json')
-                await (await bot.fetch_user(uid)).send('token已解绑并取消自动签到~')
+                await (await bot.fetch_user(user_id)).send('token已解绑并取消自动签到~')
             elif value == 'rm_cloud_ys_no':
-                wait_to_rm[uid] = False
+                wait_to_rm[user_id] = False
             else:
-                wait_to_rm[uid] = False
+                wait_to_rm[user_id] = False

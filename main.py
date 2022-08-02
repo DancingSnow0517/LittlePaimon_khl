@@ -28,7 +28,7 @@ resource_path = Path().cwd() / 'resources' / 'LittlePaimon'
 
 log = logging.getLogger(__name__)
 
-VERSION = '1.0.0'
+VERSION = '1.1.0-dev'
 
 
 class LittlePaimonBot(Bot):
@@ -72,8 +72,8 @@ class LittlePaimonBot(Bot):
     def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
                    rules=()):
         self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce)
-        return self.command(name=name, aliases=aliases, prefixes=[''],
-                            rules=[Rule.is_bot_mentioned(self)] + list(rules))
+        return self.command(name=name, aliases=aliases, prefixes=['！！', '!!'],
+                            rules=list(rules))
 
     def my_admin_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助',
                          introduce: str = '暂无命令介绍', rules=()):
@@ -110,7 +110,7 @@ def main():
                     usage='帮助 [命令] e.帮助 help (显示帮助命令的帮助信息)')
     async def print_help_message(msg: Message, *args: str):
         bot_id = bot.me.id
-        if len(args) == 1:
+        if len(args) == 0:
             card = Card(Section(Kmarkdown(f'**小派蒙的命令大全！**\n所有的命令末尾都要 (met){bot_id}(met) 哦！')),
                         *[info.build_kmd() for info in bot.help_messages.values()])
         else:
