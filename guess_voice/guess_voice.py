@@ -12,6 +12,7 @@ from khl_card.modules import Header, Countdown, Audio, Section
 from khl_card.types import ThemeTypes
 from littlepaimon_utils.files import load_json
 
+from utils.api import CommandGroups
 from . import download_data
 
 if TYPE_CHECKING:
@@ -47,13 +48,14 @@ async def on_startup(bot: 'LittlePaimonBot'):
     global guess_games
     await update(bot.config.data_path)
 
-    @bot.my_command(name='update_voice', aliases=['更新原神语音资源'], usage='更新原神语音资源',
-                    introduce='更新原神猜语言游戏的语音资源')
+    @bot.my_command(name='update_voice', aliases=['更新原神语音资源'], usage='!!更新原神语音资源',
+                    introduce='更新原神猜语言游戏的语音资源', group=[CommandGroups.GAME])
     async def update_voice(msg: Message):
         await update(bot.config.data_path)
         await msg.reply('游戏语音资源更新成功')
 
-    @bot.my_command(name='guess_game', aliases=['原神猜语音'], usage='原神猜语音 [游戏时间] [语言]', introduce='开始原神猜语音游戏')
+    @bot.my_command(name='guess_game', aliases=['原神猜语音'], usage='!!原神猜语音 [游戏时间] [语言]',
+                    introduce='开始原神猜语音游戏', group=[CommandGroups.GAME])
     async def guess_game(msg: Message, *args: str):
         global guess_games
         if msg.ctx.channel.id in guess_games:
@@ -140,8 +142,12 @@ class GuessVoice:
         if self.statu:
             await self.channel.send('原神猜语音游戏已经开始了')
         else:
-            await self.channel.send(f'正在开始原神猜语音游戏\n时间: **{game_time}** s 语言: **{language}**\n直接在频道输入角色名字视为答题', type=MessageTypes.KMD)
-            await self.channel.send([Card(Header('游戏倒计时：'), Countdown(int(time.time() * 1000 + game_time * 1000), mode='second', starttime=int(time.time() * 1000))).build()])
+            await self.channel.send(
+                f'正在开始原神猜语音游戏\n时间: **{game_time}** s 语言: **{language}**\n直接在频道输入角色名字视为答题',
+                type=MessageTypes.KMD)
+            await self.channel.send([Card(Header('游戏倒计时：'),
+                                          Countdown(int(time.time() * 1000 + game_time * 1000), mode='second',
+                                                    starttime=int(time.time() * 1000))).build()])
             self.statu = True
             self.time = game_time
             self.language = language

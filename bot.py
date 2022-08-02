@@ -8,8 +8,8 @@ from typing import List, Dict, Optional, Union, Pattern
 from khl import Bot, Message, EventTypes, Event
 from khl.command import Rule
 from khl_card import Card
-from khl_card.accessory import Kmarkdown
-from khl_card.modules import Section, Context
+from khl_card.accessory import Kmarkdown, Button
+from khl_card.modules import Section, Context, ActionGroup, Divider, Header
 from littlepaimon_utils.aiorequests import post
 from littlepaimon_utils.files import load_json, download
 
@@ -19,7 +19,7 @@ from paimon_chat import paimon_chat
 from paimon_cloud_genshin import paimon_cloud_genshin
 from paimon_gacha import paimon_gacha
 from paimon_info import paimon_info
-from utils.api import CommandInfo, MyRules
+from utils.api import CommandInfo, MyRules, CommandGroups
 from utils.config import config
 
 resource_list = load_json(path=Path(__file__).parent / 'resources' / 'resource_list.json')
@@ -69,19 +69,19 @@ class LittlePaimonBot(Bot):
         await paimon_calendar.on_startup(self)
 
     def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
-                   rules=()):
-        self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce)
+                   rules=(), group: List[CommandGroups] = ()):
+        self.help_messages[name] = CommandInfo(name=name, aliases=aliases, usage=usage, introduce=introduce, group=group)
         return self.command(name=name, aliases=aliases, prefixes=['！！', '!!'],
                             rules=list(rules))
 
     def my_admin_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助',
-                         introduce: str = '暂无命令介绍', rules=()):
+                         introduce: str = '暂无命令介绍', rules=(), group: List[CommandGroups] = ()):
         return self.my_command(name=name + '(仅限管理员)', aliases=aliases, usage=usage, introduce=introduce,
-                               rules=[MyRules.is_admin()] + list(rules))
+                               rules=[MyRules.is_admin()] + list(rules), group=group)
 
     def my_regex(self, name: str = '', *, regex: Union[str, Pattern], usage: str = '暂无使用帮助', introduce: str = '暂无命令介绍',
-                 rules=()):
-        self.help_messages[name] = CommandInfo(name=name, aliases=None, usage=usage, introduce=introduce)
+                 rules=(), group: List[CommandGroups] = ()):
+        self.help_messages[name] = CommandInfo(name=name, aliases=None, usage=usage, introduce=introduce, group=group)
         return self.command(name=name, regex=regex, prefixes=[''], rules=[Rule.is_bot_mentioned(self)] + list(rules))
 
 
@@ -106,18 +106,23 @@ def main():
     bot = LittlePaimonBot()
 
     @bot.my_command(name='help', aliases=['帮助'], introduce='显示所有帮助信息或具体命令的帮助信息',
-                    usage='帮助 [命令] e.帮助 help (显示帮助命令的帮助信息)')
-    async def print_help_message(msg: Message, *args: str):
-        bot_id = bot.me.id
-        if len(args) == 0:
-            card = Card(Section(Kmarkdown(f'**小派蒙的命令大全！**\n所有的命令末尾都要 (met){bot_id}(met) 哦！')),
-                        *[info.build_kmd() for info in bot.help_messages.values()])
+                    usage='!!帮助 [命令] e.帮助 help (显示帮助命令的帮助信息)', group=[CommandGroups.INFO])
+    async def print_help_message(msg: Message, command: str = None):
+        if command is None:
+            card = Card(
+                Section(Kmarkdown(f'现在小派蒙所有命令只需要在前面添加`!!`\n不用 (met){bot.me.id}(met) '
+                                  f'了~(部分命令还需要 (met){bot.me.id}(met), 会有特别标注)')),
+                Section(Kmarkdown('命令中的 `[]` 不用加进去。')),
+                ActionGroup(
+                    *[group.build_button() for group in CommandGroups]
+                )
+            )
         else:
-            info = bot.search_command(args[0])
+            info = bot.search_command(command)
             if info is not None:
                 card = Card(info.build_kmd())
             else:
-                card = Card(Section(Kmarkdown(f'未找到命令 {args[0]}')))
+                card = Card(Section(Kmarkdown(f'未找到命令 {command}')))
         card.append(Context(Kmarkdown(f'当前小派蒙版本: {VERSION}')))
         await msg.reply([card.build()])
 
@@ -129,6 +134,30 @@ def main():
         guild_id = event.body['guild_id']
         guild = await bot.fetch_guild(guild_id)
         log.info(f'小派蒙加入服务器 {guild.name}, id: {guild.id}')
+
+    @bot.on_event(EventTypes.MESSAGE_BTN_CLICK)
+    async def on_help_button_click(bot: LittlePaimonBot, event: Event):
+        value: str = event.body['value']
+        user_id: str = event.body['user_id']
+        channel_id: str = event.body['target_id']
+        channel_type = event.body['channel_type']
+        target = await bot.fetch_public_channel(channel_id) if channel_type == 'GROUP' else await bot.fetch_user(user_id)
+        if value.startswith('command_group_'):
+            g = None
+            for g in CommandGroups:
+                if g.name == value.replace('command_group_', ''):
+                    group = g
+                    break
+            if g is None:
+                return
+            card = Card(
+                Header(f'分组 {group.value} 的命令列表'),
+                *[info.build_kmd() for info in bot.help_messages.values() if group in info.groups]
+            )
+            card.append(Context(Kmarkdown(f'当前小派蒙版本: {VERSION}')))
+            await target.send([card.build()])
+            return
+
 
     bot.run()
 

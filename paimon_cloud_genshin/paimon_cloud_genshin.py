@@ -12,6 +12,7 @@ from khl_card.types import ThemeTypes
 from littlepaimon_utils.files import load_json, save_json
 
 from paimon_cloud_genshin.data_source import get_Info, check_token, get_Notification
+from utils.api import CommandGroups
 
 if TYPE_CHECKING:
     from bot import LittlePaimonBot
@@ -46,13 +47,15 @@ async def on_startup(bot: 'LittlePaimonBot'):
                     else:
                         signInfo = json.loads(d1['data']['list'][0]['msg'])
                         if signInfo:
-                            await (await bot.fetch_user(user)).send(f'签到成功~ {signInfo["msg"]}: {signInfo["num"]}分钟')
+                            await (await bot.fetch_user(user)).send(
+                                f'签到成功~ {signInfo["msg"]}: {signInfo["num"]}分钟')
                         else:
                             return
             else:
                 await (await bot.fetch_user(user)).send('token已过期,请重新自行抓包并重新绑定')
 
-    @bot.my_command(name='cloud_ys', aliases=['云原神', 'yys'], usage='具体使用方法直接输入本命令查看', introduce='云原神相关命令')
+    @bot.my_command(name='cloud_ys', aliases=['云原神', 'yys'], usage='使用 `!!云原神` 查看具体使用方法',
+                    introduce='云原神相关命令', group=[CommandGroups.CLOUD_GENSHIN])
     async def cloud_ys(msg: Message, *args):
         user_id = msg.author.id
         data = load_json(Path() / 'data' / 'LittlePaimon' / 'CloudGenshin.json')
@@ -63,7 +66,9 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 Section(Kmarkdown('**本命令的食用方法：**')),
                 Section(Kmarkdown('**云原神|yys** [绑定] 绑定云原神的 `token` 到你的 `kook` 账户上 ')),
                 Section(Kmarkdown('**云原神|yys** [信息] 查询云原神账户信息')),
-                Section(Kmarkdown('有关如何抓取 `token` 的方法:'), accessory=Button(text=PlainText('访问'), value='https://blog.ethreal.cn/archives/yysgettoken', click='link'))
+                Section(Kmarkdown('有关如何抓取 `token` 的方法:'),
+                        accessory=Button(text=PlainText('访问'), value='https://blog.ethreal.cn/archives/yysgettoken',
+                                         click='link'))
             )
             message = f'亲爱的旅行者: {user_id}\n\n' \
                       '本插件食用方法:\n' \
@@ -111,7 +116,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
                       '畅玩卡状态: {3}'.format(user_id, coins, free_time, card)
             await msg.reply(message)
 
-    @bot.my_command(name='rm_cloud_ys', aliases=['云原神解绑', 'yys解绑', 'yys解除绑定', 'yysdel'], usage='直接使用即可', introduce='解除你的云原神与kook的绑定')
+    @bot.my_command(name='rm_cloud_ys', aliases=['云原神解绑', 'yys解绑', 'yys解除绑定', 'yysdel'],
+                    usage='!!云原神解绑', introduce='解除你的云原神与kook的绑定', group=[CommandGroups.CLOUD_GENSHIN])
     async def rm_cloud_ys(msg: Message):
         card = Card(
             Header('是否要解绑token并取消自动签到？'),
