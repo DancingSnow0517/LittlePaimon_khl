@@ -14,7 +14,7 @@ from littlepaimon_utils.files import load_json, save_json
 from paimon_cloud_genshin.data_source import get_Info, check_token, get_Notification
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 uu = str(uuid.uuid4())
 

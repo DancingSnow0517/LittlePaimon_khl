@@ -14,7 +14,7 @@ from paimon_gacha.gacha_res import more_ten
 from utils import requests
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 BASE_URL = 'https://webstatic.mihoyo.com/hk4e/gacha_info/cn_gf01/%s'
 TEMP_PATH = Path() / 'Temp'

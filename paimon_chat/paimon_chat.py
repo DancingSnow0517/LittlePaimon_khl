@@ -13,7 +13,7 @@ from utils import requests
 from utils.message_util import MessageBuilder
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 voice_list: dict = {}
 

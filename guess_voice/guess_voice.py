@@ -15,7 +15,7 @@ from littlepaimon_utils.files import load_json
 from . import download_data
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 guess_games: Dict[str, 'GuessVoice'] = {}
 voice_data: dict

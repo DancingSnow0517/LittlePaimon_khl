@@ -6,7 +6,7 @@ from khl import Message, MessageTypes
 from paimon_calendar.generate import generate_day_schedule
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 
 async def on_startup(bot: 'LittlePaimonBot'):

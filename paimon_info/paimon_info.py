@@ -22,7 +22,7 @@ from utils.config import cookie_data, stoken_data
 from utils.enka_util import PlayerInfo
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 log = logging.getLogger(__name__)
 
