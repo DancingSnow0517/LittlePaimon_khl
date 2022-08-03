@@ -221,10 +221,10 @@ async def on_startup(bot: 'LittlePaimonBot'):
         cookie = ' '.join(cookie)
         await msg.delete()
         if not check_uid_is_valid(uid):
-            await msg.reply('不是个有效的uid')
+            await msg.ctx.channel.send('不是个有效的uid')
             return
         if not check_cookie_is_valid(cookie):
-            await msg.reply('不是个有效的cookie')
+            await msg.ctx.channel.send('不是个有效的cookie')
             return
         cookie_data.add_private_cookie(uid, msg.ctx.guild.id, msg.author.id, cookie)
         await msg.ctx.channel.send(f'cookie 添加成功 (met){msg.author.id}(met)')
