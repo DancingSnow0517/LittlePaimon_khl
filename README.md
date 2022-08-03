@@ -10,8 +10,10 @@
 <p align="center">
   <a href="https://cdn.jsdelivr.net/gh/DancingSnow0517/LittlePaimon_khl@master/LICENSE"><img src="https://img.shields.io/github/license/DancingSnow0517/LittlePaimon_khl"></a>
   <img src="https://img.shields.io/badge/Python-3.8+-yellow" alt="python">
-  <img src="https://img.shields.io/badge/khl.py-0.2.16-brightgreen" alt="khl.py">
-  <a href="https://kook.top/mBVrnI">
+  <a href="https://github.com/TWT233/khl.py">
+    <img src="https://img.shields.io/badge/khl.py-0.2.16-brightgreen" alt="khl.py">
+  </a>
+  <a href="https://kook.top/s69UmB">
     <img src="https://img.shields.io/badge/KooK%E9%A2%91%E9%81%93%E4%BA%A4%E6%B5%81-%E5%B0%8F%E6%B4%BE%E8%92%99-ff69b4" alt="Kook">
   </a>
 </p>

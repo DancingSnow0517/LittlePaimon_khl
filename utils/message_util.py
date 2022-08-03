@@ -10,7 +10,7 @@ from utils import requests
 from utils.browser import get_new_page
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 
 class MessageBuilder:

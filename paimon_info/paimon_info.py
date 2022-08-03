@@ -18,17 +18,19 @@ from paimon_info.get_coin import MihoyoBBSCoin
 from paimon_info.get_data import get_abyss_data, get_daily_note_data, get_monthinfo_data, get_player_card_data, \
     get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data, addStoken
 from utils.alias_handler import get_match_alias
+from utils.api import CommandGroups
 from utils.config import cookie_data, stoken_data
 from utils.enka_util import PlayerInfo
 
 if TYPE_CHECKING:
-    from main import LittlePaimonBot
+    from bot import LittlePaimonBot
 
 log = logging.getLogger(__name__)
 
 wait_to_rm: Dict[str, bool] = {}
 
-cookie_error_msg = '这个cookie无效哦，请旅行者确认是否正确\n1.ck要登录mys帐号后获取,且不能退出登录\n\n获取cookie的教程：\ndocs.qq.com/doc/DQ3JLWk1vQVllZ2Z1\n'
+cookie_error_msg = '这个cookie无效哦，请旅行者确认是否正确\n1.ck要登录mys帐号后获取,' \
+                   '且不能退出登录\n\n获取cookie的教程：\ndocs.qq.com/doc/DQ3JLWk1vQVllZ2Z1\n '
 
 is_reminded: List[str] = []
 
@@ -88,20 +90,24 @@ async def on_startup(bot: 'LittlePaimonBot'):
             data = await get_coin_task.task_run()
             await user.send("米游币获取完成\n" + data)
 
-    @bot.my_command(name='sy', aliases=['深渊信息', '深境螺旋信息'], introduce='查看深渊战绩信息', usage='sy [uid] [层数]')
-    async def sy(msg: Message, *args: str):
+    @bot.my_command(name='sy', aliases=['深渊信息', '深境螺旋信息'], introduce='查看深渊战绩信息',
+                    usage='!!深渊信息 [uid] [层数]', group=[CommandGroups.INFO])
+    async def sy(msg: Message, uid: str = None, *floor: str):
         images = []
-        if len(args) == 1:
+        if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
             return
-        else:
-            uid = args[0]
-        floor = args[1:-1]
+        if len(floor) == 0:
+            await msg.reply('请给要查询的层数给小派蒙哦~')
+            return
         true_floor = [int(f) for f in floor if f.isdigit() and (9 <= int(f) <= 12)]
         true_floor.sort()
         data = await get_abyss_data(msg.author.id, uid)
         if data is None:
             await msg.reply('深渊数据获取失败')
+            return
+        elif isinstance(data, str):
+            await msg.reply(data)
             return
         else:
             abyss_img = await draw_abyss_card(data, uid, floor_num=true_floor)
@@ -112,11 +118,12 @@ async def on_startup(bot: 'LittlePaimonBot'):
             images.append(await bot.create_asset('Temp/abyss.png'))
         await msg.reply([Card(Container(*[Image(src=url) for url in images])).build()])
 
-    @bot.my_command(name='ssbq', aliases=['实时便笺', '实时便签', '当前树脂'], introduce='查看当前的体力信息', usage='ssbq [uid]')
-    async def ssbq(msg: Message, *args):
-        if len(args) == 1:
+    @bot.my_command(name='ssbq', aliases=['实时便笺', '实时便签', '当前树脂'], introduce='查看当前的体力信息',
+                    usage='!!实时便笺 [uid]', group=[CommandGroups.INFO])
+    async def ssbq(msg: Message, uid: str = None):
+        if uid is None:
             await msg.reply('请输入要查询的uid')
-        uid = args[0]
+            return
         data = await get_daily_note_data(msg.author.id, uid)
         if isinstance(data, str):
             await msg.reply(data)
@@ -128,13 +135,11 @@ async def on_startup(bot: 'LittlePaimonBot'):
             img.save('Temp/note.png')
             await msg.reply(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='myzj', aliases=['札记信息', '每月札记'], introduce='查看每月札记', usage='myzj [uid] [月份]')
-    async def myzj(msg: Message, *args):
-        if len(args) != 3:
-            await msg.reply('命令格式不正确')
+    @bot.my_command(name='myzj', aliases=['札记信息', '每月札记'], introduce='查看每月札记', usage='!!札记信息 [uid] [月份]', group=[CommandGroups.INFO])
+    async def myzj(msg: Message, uid: str = None, month: str = datetime.datetime.now().month):
+        if uid is None:
+            await msg.reply('请输入要查询的uid')
             return
-        uid = args[0]
-        month = args[1]
         month_now = datetime.datetime.now().month
         if month_now == 1:
             month_list = ['11', '12', '1']
@@ -156,12 +161,12 @@ async def on_startup(bot: 'LittlePaimonBot'):
             month_img.save('Temp/month.png')
             await msg.reply(await bot.create_asset('Temp/month.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='ys', aliases=['原神卡片', '个人卡片'], introduce='查看原神个人卡片(宝箱、探索度等)', usage='ys [uid]')
-    async def ys(msg: Message, *args):
-        if len(args) == 1:
+    @bot.my_command(name='ys', aliases=['原神卡片', '个人卡片'], introduce='查看原神个人卡片(宝箱、探索度等)',
+                    usage='!!原神卡片 [uid]', group=[CommandGroups.INFO])
+    async def ys(msg: Message, uid: str = None):
+        if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
             return
-        uid = args[0]
         data = await get_player_card_data(msg.author.id, uid)
         if data is None:
             await msg.reply('原神卡片数据获取失败')
@@ -177,12 +182,11 @@ async def on_startup(bot: 'LittlePaimonBot'):
             player_card.save('Temp/player_card.png')
             await msg.reply(await bot.create_asset('Temp/player_card.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='ysa', aliases=['角色背包'], introduce='查看原神公开角色的简略信息', usage='ysa [uid]')
-    async def ysa(msg: Message, *args):
-        if len(args) == 1:
+    @bot.my_command(name='ysa', aliases=['角色背包'], introduce='查看原神公开角色的简略信息', usage='!!角色背包 [uid]', group=[CommandGroups.INFO])
+    async def ysa(msg: Message, uid: str = None):
+        if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
             return
-        uid = args[0]
         chara_data = await get_chara_detail_data(msg.author.id, uid)
         if isinstance(chara_data, str):
             await msg.reply(chara_data)
@@ -195,31 +199,31 @@ async def on_startup(bot: 'LittlePaimonBot'):
         await msg.reply(await bot.create_asset('Temp/char_card.png'), type=MessageTypes.IMG)
         ...
 
-    @bot.my_command(name='ysc', aliases=['角色卡片'], usage='暂未实现', introduce='查看原神指定角色的简略信息')
+    @bot.my_command(name='ysc', aliases=['角色卡片'], usage='暂未实现', introduce='查看原神指定角色的简略信息', group=[CommandGroups.INFO])
     async def ysc(msg: Message):
         ...
 
-    @bot.my_command(name='ysb', aliases=['原神绑定', '绑定cookie'], usage='原神绑定 [uid] [cookie]')
-    async def ysb(msg: Message, *args):
-        if len(args) <= 2:
-            card = Card(Section(Kmarkdown('缺少参数 uid 和 cookie')), Section(Kmarkdown('获取 `cookie` 教程: '),
-                                                                         accessory=Button(Kmarkdown('访问'),
-                                                                                          value='https://gitee.com/ultradream/Genshin-Tools',
-                                                                                          click='link')))
+    @bot.my_command(name='ysb', aliases=['原神绑定', '绑定cookie'], usage='!!原神绑定 [uid] [cookie]', group=[CommandGroups.INFO])
+    async def ysb(msg: Message, uid: str = None, *cookie):
+        if uid is None or len(cookie) == 0:
+            card = Card(
+                Section(Kmarkdown('缺少参数 uid 和 cookie')),
+                Section(Kmarkdown('获取 `cookie` 教程: '), accessory=Button(
+                    Kmarkdown('访问'), value='https://gitee.com/ultradream/Genshin-Tools', click='link'
+                ))
+            )
             await msg.reply([card.build()])
             return
-        uid = args[0]
-        cookie = ' '.join(args[1:-1])
+        cookie = ' '.join(cookie)
         cookie_data.add_private_cookie(uid, msg.ctx.guild.id, msg.author.id, cookie)
         await msg.delete()
         await msg.ctx.channel.send(f'cookie 添加成功 (met){msg.author.id}(met)')
 
-    @bot.my_command(name='mys_sign', aliases=['mys签到', '米游社签到'], introduce='米游社签到', usage='mys_sign [uid]')
-    async def mys_sign(msg: Message, *args):
-        if len(args) == 1:
+    @bot.my_command(name='mys_sign', aliases=['mys签到', '米游社签到'], introduce='米游社签到', usage='!!米游社签到 [uid]', group=[CommandGroups.SIGN])
+    async def mys_sign(msg: Message, uid: str = None):
+        if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
             return
-        uid = args[0]
         sign_list = await get_sign_list()
         sign_info = await get_sign_info(msg.author.id, uid)
         if isinstance(sign_info, str):
@@ -237,7 +241,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 await msg.reply(
                     f'签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
 
-    @bot.my_admin_command(name='mys_sign_all', aliases=['全部重签'], introduce='米游社的每日签到重签', usage='直接使用即可')
+    @bot.my_admin_command(name='mys_sign_all', aliases=['全部重签'], introduce='米游社的每日签到重签',
+                          usage='!!全部重签', group=[CommandGroups.SIGN])
     async def mys_sign_all(msg: Message, _):
         await msg.ctx.guild.load()
         await msg.reply('正在给服务器所有人进行重新签到')
@@ -261,13 +266,14 @@ async def on_startup(bot: 'LittlePaimonBot'):
                     await user.send(
                         f'=====服务器 {msg.ctx.guild.name} 的管理员的手动全部重签=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
 
-    @bot.my_admin_command(name='update_all', aliases=['更新全部玩家'], introduce='更新所有人的信息', usage='直接使用即可')
+    @bot.my_admin_command(name='update_all', aliases=['更新全部玩家'], introduce='更新所有人的信息',
+                          usage='!!更新全部玩家', group=[CommandGroups.INFO])
     async def update_all(msg: Message, _):
         res = await all_update()
         await msg.reply(res)
 
     @bot.my_admin_command(name='add_public_ck', aliases=['添加公共cookie', '添加公共ck'], introduce='添加公共cookie',
-                          usage='add_public_ck [cookie]')
+                          usage='!!添加公共cookie [cookie]', group=[CommandGroups.INFO])
     async def add_public_ck(msg: Message, *args):
         if len(args) == 1:
             await msg.reply('小派蒙要你的 cookie 哦')
@@ -277,8 +283,9 @@ async def on_startup(bot: 'LittlePaimonBot'):
         await msg.delete()
         await msg.ctx.channel.send('公共 cookie 添加成功！')
 
-    @bot.my_command(name='delete_ck', aliases=['删除ck', '删除cookie'], introduce='删除你的所有cookie', usage='直接使用即可')
-    async def delete_ck(msg: Message, _):
+    @bot.my_command(name='delete_ck', aliases=['删除ck', '删除cookie'], introduce='删除你的所有cookie',
+                    usage='!!删除cookie', group=[CommandGroups.INFO])
+    async def delete_ck(msg: Message):
         card = Card(
             Header('是否要删除所有 cookies？'),
             ActionGroup(
@@ -290,17 +297,16 @@ async def on_startup(bot: 'LittlePaimonBot'):
         wait_to_rm[msg.author.id] = True
         await msg.reply([card.build()])
 
-    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'], introduce='更新角色信息',
-                    usage='update_info [UID]')
-    async def update_info(msg: Message, *args):
-        if len(args) == 1:
+    @bot.my_command(name='update_info', aliases=['更新角色信息', '更新角色面板', '更新玩家信息'],
+                    introduce='更新角色信息', usage='!!更新角色信息 [UID]', group=[CommandGroups.INFO])
+    async def update_info(msg: Message, uid: str = None):
+        if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
             return
-        uid = args[0]
         await msg.reply('派蒙开始更新信息~请稍等哦~')
         enka_data = await get_enka_data(uid)
         if not enka_data:
-            if uid[0] == '5' or uid[0] == '2':
+            if uid[0] == '5':
                 await msg.reply('暂不支持B服账号哦~请等待开发者更新吧~')
                 return
             else:
@@ -318,21 +324,21 @@ async def on_startup(bot: 'LittlePaimonBot'):
             role_list = list(player_info.get_update_roles_list().keys())
             await msg.reply(f'uid{uid}更新完成~本次更新的角色有：\n' + ' '.join(role_list))
 
-    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'], introduce='查看指定角色的详细面板信息',
-                    usage='role_info [UID] [角色]')
-    async def role_info(msg: Message, *args):
-        if len(args) <= 2:
-            await msg.reply('请给你的UID和要查看的角色给小派蒙哦~')
+    @bot.my_command(name='role_info', aliases=['角色面板', '角色详情', '角色信息', 'ysd'],
+                    introduce='查看指定角色的详细面板信息',
+                    usage='!!角色面板 [UID] [角色]', group=[CommandGroups.INFO])
+    async def role_info(msg: Message, uid: str = None, char: str = None):
+        if uid is None or char is None:
+            await msg.reply('请给你的uid和要查询的角色给小派蒙哦~')
             return
-        uid = args[0]
-        if args[1] in ('a', '全部', '所有', '查看', 'all'):
+        if char in ('a', '全部', '所有', '查看', 'all'):
             role = 'all'
         else:
-            match_alias = get_match_alias(args[1], 'roles', True)
+            match_alias = get_match_alias(char, 'roles', True)
             if match_alias:
                 role = match_alias if isinstance(match_alias, str) else tuple(match_alias.keys())[0]
             else:
-                await msg.reply(f'哪有名为{args[1]}的角色啊，别拿派蒙开玩笑!')
+                await msg.reply(f'哪有名为{char}的角色啊，别拿派蒙开玩笑!')
                 return
         player_info = PlayerInfo(uid)
         roles_list = player_info.get_roles_list()
@@ -354,12 +360,9 @@ async def on_startup(bot: 'LittlePaimonBot'):
             img.save('Temp/role_card.png')
             await msg.reply(await bot.create_asset('Temp/role_card.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='get_mys_coin', aliases=['myb获取', '米游币获取', '获取米游币'], introduce='进行一次获取米游币的操作', usage='get_mys_coin [UID]')
-    async def get_mys_coin(msg: Message, *args):
-        if len(args) == 1:
-            await msg.reply('请给你的UID给小派蒙哦~')
-            return
-        uid = args[0]
+    @bot.my_command(name='get_mys_coin', aliases=['myb获取', '米游币获取', '获取米游币'],
+                    introduce='进行一次获取米游币的操作', usage='!!米游币获取 [UID]', group=[CommandGroups.SIGN])
+    async def get_mys_coin(msg: Message):
         stoken_info = stoken_data.get_private_stoken(msg.author.id)
         if stoken_info is None:
             await msg.reply('请旅行者先添加 cookie 和 stoken 哦')
@@ -370,9 +373,10 @@ async def on_startup(bot: 'LittlePaimonBot'):
         data = await get_coin_task.task_run()
         await msg.reply("米游币获取完成\n" + data)
 
-    @bot.my_command(name='add_stoken', aliases=['添加stoken'], introduce='绑定你的stoken，来支持米游币相关的操作', usage='add_stoken [stoken]')
+    @bot.my_command(name='add_stoken', aliases=['添加stoken'], introduce='绑定你的stoken，来支持米游币相关的操作',
+                    usage='!!添加stoken [stoken]', group=[CommandGroups.INFO])
     async def add_stoken(msg: Message, *args):
-        if len(args) == 1:
+        if len(args) == 0:
             await msg.reply([
                 Card(
                     Section(Kmarkdown('缺少参数 `stoken`')),
@@ -380,7 +384,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
                             accessory=Button(Kmarkdown('访问'), value='https://docs.qq.com/doc/DQ3JLWk1vQVllZ2Z1',
                                              click='link'))).build()])
             return
-        stoken = ' '.join(args[:-1])
+        stoken = ' '.join(args)
         cookie_info = cookie_data.get_user_cookies(msg.author.id)
         if len(cookie_info) == 0:
             return
