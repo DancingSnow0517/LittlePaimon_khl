@@ -196,7 +196,7 @@ def get_private_cookie(uid):
 
 
 # 添加stoken
-async def addStoken(stoken, uid):
+async def add_stoken(stoken, uid):
     login_ticket = re.search(r'login_ticket=([0-9a-zA-Z]+)', stoken)
     if login_ticket:
         login_ticket = login_ticket.group(0).split('=')[1]

@@ -16,9 +16,10 @@ from paimon_info.draw_player_card import draw_player_card, draw_all_chara_card
 from paimon_info.draw_role_card import draw_role_card
 from paimon_info.get_coin import MihoyoBBSCoin
 from paimon_info.get_data import get_abyss_data, get_daily_note_data, get_monthinfo_data, get_player_card_data, \
-    get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data, addStoken
+    get_chara_detail_data, get_sign_list, get_sign_info, sign, get_enka_data, add_stoken
 from utils.alias_handler import get_match_alias
 from utils.api import CommandGroups
+from utils.check import check_uid_is_valid, check_cookie_is_valid
 from utils.config import cookie_data, stoken_data
 from utils.enka_util import PlayerInfo
 
@@ -218,8 +219,14 @@ async def on_startup(bot: 'LittlePaimonBot'):
             await msg.reply([card.build()])
             return
         cookie = ' '.join(cookie)
-        cookie_data.add_private_cookie(uid, msg.ctx.guild.id, msg.author.id, cookie)
         await msg.delete()
+        if not check_uid_is_valid(uid):
+            await msg.reply('不是个有效的uid')
+            return
+        if not check_cookie_is_valid(cookie):
+            await msg.reply('不是个有效的cookie')
+            return
+        cookie_data.add_private_cookie(uid, msg.ctx.guild.id, msg.author.id, cookie)
         await msg.ctx.channel.send(f'cookie 添加成功 (met){msg.author.id}(met)')
 
     @bot.my_command(name='mys_sign', aliases=['mys签到', '米游社签到'], introduce='米游社签到', usage='!!米游社签到 [uid]', group=[CommandGroups.SIGN])
@@ -392,7 +399,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         if len(cookie_info) == 0:
             return
         uid = list(cookie_info.keys())[0]
-        stoken, mys_id, stoken_info, m = await addStoken(stoken, uid)
+        stoken, mys_id, stoken_info, m = await add_stoken(stoken, uid)
 
         if not stoken_info and not mys_id:
             await msg.reply(m)
