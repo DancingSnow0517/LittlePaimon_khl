@@ -27,7 +27,7 @@ resource_path = Path().cwd() / 'resources' / 'LittlePaimon'
 
 log = logging.getLogger(__name__)
 
-VERSION = '1.1.0-dev'
+VERSION = '1.1.0'
 
 
 class LittlePaimonBot(Bot):
