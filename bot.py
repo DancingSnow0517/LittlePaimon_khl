@@ -172,6 +172,7 @@ def main():
                     break
             if g is None:
                 return
+            log.info(f'给 {user_id} 回复命令组 {group.value}')
             card = Card(
                 Header(f'分组 {group.value} 的命令列表'),
                 *[info.build_kmd() for info in bot.help_messages.values() if group in info.groups]
