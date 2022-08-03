@@ -76,9 +76,10 @@ class ColoredLogger(logging.Logger):
         self.setLevel(level)
 
     @classmethod
-    def get_console_formatter(cls, plugin_id=None):
+    def get_console_formatter(cls):
         return ColoredFormatter(
-            f'[%(module)s] [%(asctime)s] [%(threadName)s/%(log_color)s%(levelname)s%(reset)s]: %(message_log_color)s%(message)s%(reset)s',
+            f'[%(module)s] [%(asctime)s] [%(threadName)s/%(log_color)s%(levelname)s%(reset)s]: %('
+            f'message_log_color)s%(message)s%(reset)s',
             log_colors=cls.LOG_COLORS,
             secondary_log_colors=cls.SECONDARY_LOG_COLORS,
             datefmt='%H:%M:%S'

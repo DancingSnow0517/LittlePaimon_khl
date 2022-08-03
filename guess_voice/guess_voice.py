@@ -27,6 +27,7 @@ char_alias = load_json(Path() / 'utils' / 'json_data' / 'alias.json')
 
 # 以防同时回答
 guess_lock = asyncio.Lock()
+update_lock = asyncio.Lock()
 
 
 # 获取原神语音
@@ -51,8 +52,13 @@ async def on_startup(bot: 'LittlePaimonBot'):
     @bot.my_command(name='update_voice', aliases=['更新原神语音资源'], usage='!!更新原神语音资源',
                     introduce='更新原神猜语言游戏的语音资源', group=[CommandGroups.GAME])
     async def update_voice(msg: Message):
+        if update_lock.locked():
+            await msg.reply('已经在更新语音资源了')
+            return
+        await update_lock.acquire()
         await update(bot.config.data_path)
         await msg.reply('游戏语音资源更新成功')
+        update_lock.release()
 
     @bot.my_command(name='guess_game', aliases=['原神猜语音'], usage='!!原神猜语音 [游戏时间] [语言]',
                     introduce='开始原神猜语音游戏', group=[CommandGroups.GAME])
@@ -78,6 +84,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
                 lang = args[1]
             else:
                 await msg.reply('`语言` 可以为 `中`, `日`, `英`, `韩`', type=MessageTypes.KMD)
+                return
         await game.start(game_time, lang)
 
     role_map = {}
@@ -85,7 +92,6 @@ async def on_startup(bot: 'LittlePaimonBot'):
         t = char_alias['roles'][i]
         for n in t:
             role_map[n] = t[0]
-
     @bot.command(name='guess', prefixes=[''], aliases=list(role_map.keys()))
     async def guess(msg: Message):
         await guess_lock.acquire()
