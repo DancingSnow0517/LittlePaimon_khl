@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Literal, List, Dict, Tuple
 from khl import Message, Channel, User, MessageTypes
 from khl_card.accessory import *
 from khl_card.card import Card
-from khl_card.modules import Header, Countdown, Audio, Section
+from khl_card.modules import Header, Countdown, Audio, Section, Context
 from khl_card.types import ThemeTypes
 from littlepaimon_utils.files import load_json
 
@@ -92,6 +92,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
         t = char_alias['roles'][i]
         for n in t:
             role_map[n] = t[0]
+
     @bot.command(name='guess', prefixes=[''], aliases=list(role_map.keys()))
     async def guess(msg: Message):
         await guess_lock.acquire()
@@ -169,7 +170,8 @@ class GuessVoice:
     async def stop(self):
         if self.statu:
             await self.channel.send('游戏结束！')
-            await self.channel.send([self.get_rank_card().build()])
+            await self.channel.send([self.get_rank_card()
+                                    .append(Context(Kmarkdown(f'最后一题的答案为 **{self.info.char}**'))).build()])
             self.statu = False
         else:
             await self.channel.send('游戏都还没开始')
