@@ -4,7 +4,7 @@ import random
 from asyncio import sleep
 from typing import TYPE_CHECKING, Dict, List
 
-from khl import Message, MessageTypes, EventTypes, Event
+from khl import Message, MessageTypes, EventTypes, Event, HTTPRequester
 from khl_card import Card, ThemeTypes
 from khl_card.accessory import Image, Kmarkdown, Button, PlainText
 from khl_card.modules import Container, Section, Header, ActionGroup
@@ -46,15 +46,18 @@ async def on_startup(bot: 'LittlePaimonBot'):
             data = await get_daily_note_data(info.owner, uid)
             if not isinstance(data, str):
                 if data['data']['current_resin'] >= 140:
-                    user = await bot.fetch_user(info.owner)
-                    await user.send('树脂快要溢出了~~~' if data['data']['current_resin'] < 160 else '树脂溢出了~~~')
-                    img = await draw_daily_note_card(data, uid)
-                    if isinstance(img, str):
-                        await user.send(img)
-                        return
-                    img.save('Temp/note.png')
-                    await user.send(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
-                    is_reminded.append(uid)
+                    try:
+                        user = await bot.fetch_user(info.owner)
+                        await user.send('树脂快要溢出了~~~' if data['data']['current_resin'] < 160 else '树脂溢出了~~~')
+                        img = await draw_daily_note_card(data, uid)
+                        if isinstance(img, str):
+                            await user.send(img)
+                            return
+                        img.save('Temp/note.png')
+                        await user.send(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
+                        is_reminded.append(uid)
+                    except HTTPRequester.APIRequestFailed:
+                        continue
 
     @bot.task.add_cron(hour=6, timezone='Asia/Shanghai')
     async def auto_sign():
