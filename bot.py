@@ -5,7 +5,7 @@ import os.path
 from pathlib import Path
 from typing import List, Dict, Optional, Union, Pattern
 
-from khl import Bot, Message, EventTypes, Event, MessageTypes
+from khl import Bot, Message, EventTypes, Event, User, MessageTypes
 from khl.command import Rule
 from khl_card import Card
 from khl_card.accessory import Kmarkdown, Button
@@ -130,7 +130,9 @@ def main():
                 # ),
                 # Divider(),
                 Section(Kmarkdown(f'在使用 (met){bot.me.id}(met) 过程中遇到的问题，可以来的官方频道询问')),
-                Invite('s69UmB')
+                Invite('s69UmB'),
+                Section(Kmarkdown('有能力的可以支持下作者ヾ(≧▽≦*)o'),
+                        accessory=Button(Kmarkdown('去发电'), value='https://afdian.net/@dancingsnow', click='link'))
             )
         else:
             info = bot.search_command(command)
@@ -140,6 +142,10 @@ def main():
                 card = Card(Section(Kmarkdown(f'未找到命令 {command}')))
         card.append(Context(Kmarkdown(f'当前小派蒙版本: {VERSION}')))
         await msg.reply([card.build()])
+
+    @bot.command(name='old_help', aliases=['帮助'], prefixes=[''], rules=[Rule.is_bot_mentioned(bot)])
+    async def old_help(msg: Message, _):
+        await msg.reply('小派蒙的命令系统更新啦~~ 现在使用 `!!帮助` 来查看帮助信息', type=MessageTypes.KMD)
 
     # 预留 botmarket 的在线检测
     bot.task.add_interval(minutes=30, timezone='Asia/Shanghai')(check_online)
@@ -171,7 +177,10 @@ def main():
                 *[info.build_kmd() for info in bot.help_messages.values() if group in info.groups]
             )
             card.append(Context(Kmarkdown(f'当前小派蒙版本: {VERSION}')))
-            await target.send([card.build()])
+            if isinstance(target, User):
+                await target.send([card.build()])
+            else:
+                await target.send([card.build()], temp_target_id=user_id)
             return
 
     bot.run()
