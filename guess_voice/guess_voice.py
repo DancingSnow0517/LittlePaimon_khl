@@ -95,6 +95,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.command(name='guess', prefixes=[''], aliases=list(role_map.keys()))
     async def guess(msg: Message):
+        if guess_lock.locked():
+            return
         await guess_lock.acquire()
         game = guess_games.get(msg.ctx.channel.id, None)
         if game is None:
