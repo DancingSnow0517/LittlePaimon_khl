@@ -263,7 +263,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.my_admin_command(name='mys_sign_all', aliases=['全部重签'], introduce='米游社的每日签到重签',
                           usage='!!全部重签', group=[CommandGroups.SIGN])
-    async def mys_sign_all(msg: Message, _):
+    async def mys_sign_all(msg: Message):
         await msg.ctx.guild.load()
         await msg.reply('正在给服务器所有人进行重新签到')
         cookies = cookie_data.get_guild_cookies(msg.ctx.guild.id)
@@ -288,7 +288,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.my_admin_command(name='update_all', aliases=['更新全部玩家'], introduce='更新所有人的信息',
                           usage='!!更新全部玩家', group=[CommandGroups.INFO])
-    async def update_all(msg: Message, _):
+    async def update_all(msg: Message):
         res = await all_update()
         await msg.reply(res)
 
