@@ -139,7 +139,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
             img.save('Temp/note.png')
             await msg.reply(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='myzj', aliases=['札记信息', '每月札记'], introduce='查看每月札记', usage='!!札记信息 [uid] [月份]', group=[CommandGroups.INFO])
+    @bot.my_command(name='myzj', aliases=['札记信息', '每月札记'], introduce='查看每月札记',
+                    usage='!!札记信息 [uid] [月份]', group=[CommandGroups.INFO])
     async def myzj(msg: Message, uid: str = None, month: str = datetime.datetime.now().month):
         if uid is None:
             await msg.reply('请输入要查询的uid')
@@ -186,7 +187,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
             player_card.save('Temp/player_card.png')
             await msg.reply(await bot.create_asset('Temp/player_card.png'), type=MessageTypes.IMG)
 
-    @bot.my_command(name='ysa', aliases=['角色背包'], introduce='查看原神公开角色的简略信息', usage='!!角色背包 [uid]', group=[CommandGroups.INFO])
+    @bot.my_command(name='ysa', aliases=['角色背包'], introduce='查看原神公开角色的简略信息', usage='!!角色背包 [uid]',
+                    group=[CommandGroups.INFO])
     async def ysa(msg: Message, uid: str = None):
         if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
@@ -203,11 +205,13 @@ async def on_startup(bot: 'LittlePaimonBot'):
         await msg.reply(await bot.create_asset('Temp/char_card.png'), type=MessageTypes.IMG)
         ...
 
-    @bot.my_command(name='ysc', aliases=['角色卡片'], usage='暂未实现', introduce='查看原神指定角色的简略信息', group=[CommandGroups.INFO])
+    @bot.my_command(name='ysc', aliases=['角色卡片'], usage='暂未实现', introduce='查看原神指定角色的简略信息',
+                    group=[CommandGroups.INFO])
     async def ysc(msg: Message):
         ...
 
-    @bot.my_command(name='ysb', aliases=['原神绑定', '绑定cookie'], usage='!!原神绑定 [uid] [cookie]', group=[CommandGroups.INFO])
+    @bot.my_command(name='ysb', aliases=['原神绑定', '绑定cookie'], usage='!!原神绑定 [uid] [cookie]',
+                    group=[CommandGroups.INFO])
     async def ysb(msg: Message, uid: str = None, *cookie):
         if uid is None or len(cookie) == 0:
             card = Card(
@@ -229,7 +233,13 @@ async def on_startup(bot: 'LittlePaimonBot'):
         cookie_data.add_private_cookie(uid, msg.ctx.guild.id, msg.author.id, cookie)
         await msg.ctx.channel.send(f'cookie 添加成功 (met){msg.author.id}(met)')
 
-    @bot.my_command(name='mys_sign', aliases=['mys签到', '米游社签到'], introduce='米游社签到', usage='!!米游社签到 [uid]', group=[CommandGroups.SIGN])
+    @bot.my_command(name='ysbjc', aliases=['原神绑定检查', '检查cookie绑定状态'], usage='!!原神绑定检查 [UID]',
+                    introduce='检查私人cookie绑定状态，可检查指定的uid是否绑定cookie', group=[CommandGroups.INFO])
+    async def ysbjc(msg: Message):
+        ...
+
+    @bot.my_command(name='mys_sign', aliases=['mys签到', '米游社签到'], introduce='米游社签到',
+                    usage='!!米游社签到 [uid]', group=[CommandGroups.SIGN])
     async def mys_sign(msg: Message, uid: str = None):
         if uid is None:
             await msg.reply('请给你的 UID 给小派蒙哦~')
