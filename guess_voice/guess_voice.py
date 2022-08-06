@@ -104,7 +104,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
             return
 
         if game.statu:
-            char = role_map[msg.content]
+            char = role_map[msg.content.replace(' ', '')]
             if char == '空' or char == '荧':
                 char = '旅行者'
             if char == game.info.char:
