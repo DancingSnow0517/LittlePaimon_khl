@@ -72,7 +72,6 @@ async def generate_day_schedule(server='cn'):
     with open(temp_path, 'w', encoding='utf-8') as f:
         f.write(content)
     return await to_pic(viewport={"width": 600, "height": 10})
-    # return await html_to_pic(content, wait=0, viewport={"width": 600, "height": 10})
 
 
 async def to_pic(wait: int = 0, **kwargs):
