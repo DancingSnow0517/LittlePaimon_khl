@@ -2,7 +2,7 @@ import pathlib
 import time
 from io import BytesIO
 from os import getcwd
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Tuple
 
 from PIL import Image
 
@@ -16,11 +16,12 @@ if TYPE_CHECKING:
 class MessageBuilder:
 
     @staticmethod
-    async def static_image(bot: 'LittlePaimonBot', url: str, quality: Optional[int] = 100,
-                           is_check_time: Optional[bool] = True,
+    async def static_image(bot: 'LittlePaimonBot', url: str, crop: Optional[Tuple[int, int, int, int]] = None,
+                           quality: Optional[int] = 100, is_check_time: Optional[bool] = True,
                            check_time_day: Optional[int] = 3) -> Optional[str]:
         """
         从url下载图片，并预处理并构造成 KHL_Message ，如果url的图片已存在本地，则直接读取本地图片
+        :param crop: 预处理裁剪大小
         :param bot: 开黑啦机器人
         :param url: 图片 url
         :param quality: 预处理图片质量
@@ -37,9 +38,10 @@ class MessageBuilder:
             image = await requests.get_image(url='https://static.cherishmoon.fun/' + url, save_path=path)
             if image is None:
                 return None
-        bio = BytesIO()
-        image.save(bio, format='JPEG' if image.mode == 'RGB' else 'PNG', quality=quality)
-        return await bot.create_asset(bio)
+        if crop:
+            image = image.crop(crop)
+        image.save('Temp/attribute.png')
+        return await bot.create_asset('Temp/attribute.png')
 
     @staticmethod
     async def static_record(bot: 'LittlePaimonBot', url: str):

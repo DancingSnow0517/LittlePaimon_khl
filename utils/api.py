@@ -12,6 +12,7 @@ class CommandGroups(Enum):
     INFO = '信息'
     SIGN = '签到'
     CLOUD_GENSHIN = '云原神'
+    WIKI = 'WIKI'
 
     def build_button(self) -> Button:
         return Button(Kmarkdown(f'查看 **{str(self.value)}** 分组的命令'), value=f'command_group_{self.name}',
