@@ -46,8 +46,8 @@ async def on_startup(bot: 'LittlePaimonBot'):
             info = cookie_data.get_cookie_by_uid(uid)
             data = await get_daily_note_data(info.owner, uid)
             if not isinstance(data, str):
-                if data['data']['current_resin'] >= 140:
-                    try:
+                try:
+                    if data['data']['current_resin'] >= 140:
                         user = await bot.fetch_user(info.owner)
                         await user.send('树脂快要溢出了~~~' if data['data']['current_resin'] < 160 else '树脂溢出了~~~')
                         img = await draw_daily_note_card(data, uid)
@@ -57,8 +57,10 @@ async def on_startup(bot: 'LittlePaimonBot'):
                         img.save('Temp/note.png')
                         await user.send(await bot.create_asset('Temp/note.png'), type=MessageTypes.IMG)
                         is_reminded.append(uid)
-                    except HTTPRequester.APIRequestFailed:
-                        continue
+                except HTTPRequester.APIRequestFailed:
+                    continue
+                except TypeError:
+                    continue
 
     @bot.task.add_cron(hour=6, timezone='Asia/Shanghai')
     async def auto_sign():
@@ -67,32 +69,38 @@ async def on_startup(bot: 'LittlePaimonBot'):
         sign_list = await get_sign_list()
         cookies = cookie_data.cookies
         for uid in cookies:
-            user = await bot.fetch_user(cookies[uid].owner)
-            sign_info = await get_sign_info(cookies[uid].owner, uid)
-            if isinstance(sign_info, str):
-                await user.send('=====小派蒙的自动签到=====\n' + sign_info)
-            elif sign_info['data']['is_sign']:
-                sign_day = sign_info['data']['total_sign_day'] - 1
-                await user.send(
-                    f'=====小派蒙的自动签到=====\n你今天已经签过到了哦, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
-            else:
-                sign_day = sign_info['data']['total_sign_day']
-                sign_action = await sign(cookies[uid].owner, uid)
-                if isinstance(sign_action, str):
-                    await user.send('=====小派蒙的自动签到=====\n' + sign_action)
-                else:
+            try:
+                user = await bot.fetch_user(cookies[uid].owner)
+                sign_info = await get_sign_info(cookies[uid].owner, uid)
+                if isinstance(sign_info, str):
+                    await user.send('=====小派蒙的自动签到=====\n' + sign_info)
+                elif sign_info['data']['is_sign']:
+                    sign_day = sign_info['data']['total_sign_day'] - 1
                     await user.send(
-                        f'=====小派蒙的自动签到=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+                        f'=====小派蒙的自动签到=====\n你今天已经签过到了哦, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+                else:
+                    sign_day = sign_info['data']['total_sign_day']
+                    sign_action = await sign(cookies[uid].owner, uid)
+                    if isinstance(sign_action, str):
+                        await user.send('=====小派蒙的自动签到=====\n' + sign_action)
+                    else:
+                        await user.send(
+                            f'=====小派蒙的自动签到=====\n签到成功, 获得的奖励为:\n{sign_list["data"]["awards"][sign_day]["name"]} * {sign_list["data"]["awards"][sign_day]["cnt"]}')
+            except:
+                continue
 
     @bot.task.add_cron(hour=0, timezone='Asia/Shanghai')
     async def auto_get_coin():
         stokens = stoken_data.get_all_stoken()
         for user_id in stokens:
-            user = await bot.fetch_user(user_id)
-            stoken = stokens[user_id].stoken
-            get_coin_task = MihoyoBBSCoin(stoken)
-            data = await get_coin_task.task_run()
-            await user.send("米游币获取完成\n" + data)
+            try:
+                user = await bot.fetch_user(user_id)
+                stoken = stokens[user_id].stoken
+                get_coin_task = MihoyoBBSCoin(stoken)
+                data = await get_coin_task.task_run()
+                await user.send("米游币获取完成\n" + data)
+            except:
+                continue
 
     @bot.my_command(name='sy', aliases=['深渊信息', '深境螺旋信息'], introduce='查看深渊战绩信息',
                     usage='!!深渊信息 [uid] [层数]', group=[CommandGroups.INFO])
