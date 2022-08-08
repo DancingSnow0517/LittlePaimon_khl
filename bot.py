@@ -19,6 +19,7 @@ from paimon_chat import paimon_chat
 from paimon_cloud_genshin import paimon_cloud_genshin
 from paimon_gacha import paimon_gacha
 from paimon_info import paimon_info
+from paimon_wiki import paimon_wiki
 from utils.api import CommandInfo, MyRules, CommandGroups
 from utils.config import config
 
@@ -27,7 +28,7 @@ resource_path = Path().cwd() / 'resources' / 'LittlePaimon'
 
 log = logging.getLogger(__name__)
 
-VERSION = '1.1.0'
+VERSION = '1.2.0-dev'
 
 
 class LittlePaimonBot(Bot):
@@ -67,6 +68,7 @@ class LittlePaimonBot(Bot):
         await paimon_cloud_genshin.on_startup(self)
         await paimon_info.on_startup(self)
         await paimon_calendar.on_startup(self)
+        await paimon_wiki.on_startup(self)
 
     def my_command(self, name: str = '', *, aliases: List[str] = (), usage: str = '暂无使用帮助',
                    introduce: str = '暂无命令介绍',
