@@ -114,6 +114,7 @@ def main():
                     usage='!!帮助 [命令] e.帮助 help (显示帮助命令的帮助信息)', group=[CommandGroups.INFO])
     async def print_help_message(msg: Message, command: str = None):
         if command is None:
+            groups = list(CommandGroups)
             card = Card(
                 Header('小派蒙的帮助信息'),
                 Section(Kmarkdown(f'现在小派蒙所有命令只需要在前面添加`!!`\n不需要 (met){bot.me.id}(met) '
@@ -121,7 +122,10 @@ def main():
                 Section(
                     Kmarkdown('命令中的 `[ ]` 不用加进去。\n例: `[UID]` 只需要将这个替换为你的 `UID`。`[cookie]` 同理')),
                 ActionGroup(
-                    *[group.build_button() for group in CommandGroups]
+                    *[group.build_button() for group in groups[:4]]
+                ),
+                ActionGroup(
+                    *[group.build_button() for group in groups[4:]]
                 ),
                 Divider(),
                 # Section(Kmarkdown('**快捷命令**')),
