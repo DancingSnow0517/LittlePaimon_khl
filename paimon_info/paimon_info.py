@@ -231,7 +231,10 @@ async def on_startup(bot: 'LittlePaimonBot'):
             await msg.reply([card.build()])
             return
         cookie = ' '.join(cookie)
-        await msg.delete()
+        try:
+            await msg.delete()
+        except:
+            ...
         if not check_uid_is_valid(uid):
             await msg.ctx.channel.send('不是个有效的uid')
             return
@@ -390,7 +393,7 @@ async def on_startup(bot: 'LittlePaimonBot'):
 
     @bot.my_command(name='get_mys_coin', aliases=['myb获取', '米游币获取', '获取米游币'],
                     introduce='进行一次获取米游币的操作', usage='!!米游币获取 [UID]', group=[CommandGroups.SIGN])
-    async def get_mys_coin(msg: Message):
+    async def get_mys_coin(msg: Message, _):
         stoken_info = stoken_data.get_private_stoken(msg.author.id)
         if stoken_info is None:
             await msg.reply('请旅行者先添加 cookie 和 stoken 哦')
